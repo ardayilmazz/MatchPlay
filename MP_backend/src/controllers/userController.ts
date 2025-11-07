@@ -1,6 +1,17 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
+import dotenv from 'dotenv';
+
+dotenv.config(); // .env değişkenlerini yükle
+
+const generateToken = (id: any) => {
+  const secret = process.env.JWT_SECRET;
+  return jwt.sign({ id }, secret!, {
+    expiresIn: '30d',
+  });
+};
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -29,13 +40,13 @@ export const registerUser = async (req: Request, res: Response) => {
     });
 
     if (user) {
-      // 4. Başarılı bir şekilde oluşturulduysa, temel kullanıcı bilgilerini geri dön
-      // Not: Şifreyi ASLA geri göndermiyoruz.
+      // 4. Başarılı bir şekilde oluşturulduysa, kullanıcı bilgilerini ve TOKEN'ı geri dön
       res.status(201).json({
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        token: generateToken(user._id), // Token'ı burada oluşturup gönderiyoruz.
       });
     } else {
       res.status(400).json({ message: 'Geçersiz kullanıcı verisi.' });

@@ -18,10 +18,14 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 
 export default function RegisterScreen() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
     email?: string;
     password?: string;
     confirmPassword?: string;
@@ -33,10 +37,15 @@ export default function RegisterScreen() {
 
   const validate = () => {
     const newErrors: {
+      firstName?: string;
+      lastName?: string;
       email?: string;
       password?: string;
       confirmPassword?: string;
     } = {};
+
+    if (!firstName) newErrors.firstName = 'Ad gereklidir';
+    if (!lastName) newErrors.lastName = 'Soyad gereklidir';
 
     if (!email) {
       newErrors.email = 'E-posta adresi gereklidir';
@@ -68,18 +77,17 @@ export default function RegisterScreen() {
     setLoading(true);
 
     try {
-      const result = await register(email, password);
+      // Fonksiyonu yeni parametrelerle çağır
+      const result = await register(firstName, lastName, email, password);
       setLoading(false);
 
       if (!result.success) {
         console.log('Registration failed:', result.message);
         setGeneralError(result.message || 'Kayıt olunamadı');
       } else {
-        console.log('Registration successful');
-        setSuccessMessage(result.message || 'Kayıt başarılı! Giriş yapabilirsiniz.');
-        setTimeout(() => {
-          router.replace('/auth/login');
-        }, 2000);
+        console.log('Registration successful, navigating to onboarding');
+        // Başarılı kayıt sonrası login'e değil, profil oluşturma ekranına yönlendir.
+        router.replace('/onboarding/basic-info');
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -119,6 +127,25 @@ export default function RegisterScreen() {
                 <Text style={styles.successText}>{successMessage}</Text>
               </View>
             ) : null}
+
+            <View style={styles.nameContainer}>
+              <Input
+                label="Ad"
+                placeholder="Adınız"
+                value={firstName}
+                onChangeText={setFirstName}
+                error={errors.firstName}
+                containerStyle={styles.nameInput}
+              />
+              <Input
+                label="Soyad"
+                placeholder="Soyadınız"
+                value={lastName}
+                onChangeText={setLastName}
+                error={errors.lastName}
+                containerStyle={styles.nameInput}
+              />
+            </View>
 
             <Input
               label="E-posta"
@@ -200,6 +227,13 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   form: {
+    flex: 1,
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  nameInput: {
     flex: 1,
   },
   registerButton: {

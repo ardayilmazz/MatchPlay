@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthState } from '@/types';
 import { authService } from '@/services/authService';
 
-interface AuthContextType extends AuthState {
+export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateUser: (user: User) => Promise<{ success: boolean; message?: string }>;
   setUser: (user: User | null) => void;
@@ -39,8 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return result;
   };
 
-  const register = async (email: string, password: string) => {
-    return await authService.register(email, password);
+  const register = async (firstName: string, lastName: string, email: string, password: string) => {
+    const result = await authService.register(firstName, lastName, email, password);
+    if (result.success && result.user) {
+      // Kayıt başarılıysa, kullanıcıyı state'e ata ve anında giriş yapmış say.
+      setUser(result.user);
+    }
+    return result;
   };
 
   const logout = async () => {

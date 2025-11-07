@@ -85,10 +85,6 @@ export default function BasicInfoScreen() {
       newErrors.lastName = 'Soyad gereklidir';
     }
 
-    if (!profilePhoto) {
-      newErrors.profilePhoto = 'Profil fotoğrafı gereklidir';
-    }
-
     if (!university) {
       newErrors.university = 'Üniversite seçimi gereklidir';
     }

@@ -41,7 +41,7 @@ export const notificationService = {
     const newNotification: Notification = {
       id: Math.random().toString(),
       userId,
-      type,
+      type: 'request_received', // Using a valid NotificationType
       title,
       message,
       data,

@@ -14,6 +14,7 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   isPassword?: boolean;
+  containerStyle?: object;
 }
 
 export default function Input({
@@ -21,12 +22,13 @@ export default function Input({
   error,
   isPassword = false,
   style,
+  containerStyle,
   ...props
 }: InputProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.inputContainer}>
         <TextInput

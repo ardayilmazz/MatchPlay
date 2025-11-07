@@ -32,3 +32,19 @@ Bu dosya, MatchPlay projesinin geliştirme sürecinde yapılan işlemleri ve al�
 - `controllers/userController.ts` dosyasında, yeni kullanıcı kaydı mantığını (e-posta kontrolü, şifre hash'leme, veritabanına kaydetme) içeren `registerUser` fonksiyonu yazıldı.
 - `routes/userRoutes.ts` dosyasında, `POST /api/users/register` endpoint'i tanımlandı ve `registerUser` controller'ına bağlandı.
 - Ana sunucu dosyası `index.ts`, `/api/users` ile başlayan istekleri `userRoutes`'a yönlendirecek şekilde güncellendi.
+
+### Sorun Giderme ve Ek Notlar
+
+- **Backend Kurulumu:** `npm` komutlarının hatalı dizinlerde çalışması nedeniyle `package.json` dosyası manuel olarak oluşturuldu ve bağımlılıklar sonradan eklendi. TypeScript tip hatalarını çözmek için `node_modules` klasörü silinip `npm install` komutuyla temiz bir kurulum yapıldı.
+- **Git Kurulumu:** Proje `git init` ile yerel bir depoya dönüştürüldü. `git remote` komutlarındaki yazım hataları düzeltildi ve Windows Kimlik Bilgileri Yöneticisi'nden eski GitHub hesabının temizlenmesiyle `private` depoya `push` işlemi başarıyla tamamlandı.
+- **Frontend Hataları:** Supabase'den geçiş sonrası `AuthContext`, `Input` component'i ve çeşitli servislerdeki (`authService`, `mockData` vb.) tipler ve fonksiyon çağrıları, yeni backend yapısıyla uyumlu olacak şekilde güncellendi.
+
+### Otomatik Giriş (Auto-Login) Akışı
+
+- **Amaç:** Kullanıcının kayıt olduktan sonra tekrar giriş yapma zorunluluğunu ortadan kaldırmak ve doğrudan bir sonraki adıma (profil oluşturma) yönlendirmek.
+- **Backend:** `jsonwebtoken` kütüphanesi projeye eklendi. `registerUser` controller'ı, başarılı bir kayıttan sonra kullanıcı bilgileriyle birlikte bir JWT (JSON Web Token) üretecek şekilde güncellendi.
+- **Frontend:** `authService`, `AuthContext` ve `register.tsx` dosyaları bu yeni akışı destekleyecek şekilde güncellendi. Kayıt başarılı olduğunda, backend'den gelen kullanıcı bilgileri ve token ile `AuthContext`'teki kullanıcı durumu güncellenerek otomatik giriş sağlandı ve kullanıcı `/onboarding/basic-info` ekranına yönlendirildi.
+
+### Onboarding (Profil Oluşturma) Akışı
+
+- **Profil Fotoğrafı Zorunluluğu Kaldırıldı:** Kullanıcının profil oluşturma sürecini tamamlayabilmesi için `basic-info.tsx` ekranındaki profil fotoğrafı yükleme zorunluluğu kaldırıldı.

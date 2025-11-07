@@ -1,4 +1,38 @@
-import { Game, GameRequest, Notification, WaitlistEntry } from '@/types';
+import { Game, GameRequest, Notification, WaitlistEntry, University, Department, Sport, City, District, Venue, GameSkillLevel } from '@/types';
+
+export const universities: University[] = [
+  { id: '1', name: 'Boğaziçi Üniversitesi', city: 'İstanbul', district: 'Bebek' },
+  { id: '2', name: 'Orta Doğu Teknik Üniversitesi', city: 'Ankara', district: 'Çankaya' },
+];
+export const departments: Department[] = [
+  { id: '1', name: 'Bilgisayar Mühendisliği' },
+  { id: '2', name: 'Elektrik-Elektronik Mühendisliği' },
+];
+export const sports: Sport[] = [
+  { id: '1', name: 'Basketbol', category: 'team', icon: 'basketball' },
+  { id: '2', name: 'Futbol', category: 'team', icon: 'soccer' },
+];
+export const skillLevels = [
+  { value: 'beginner', label: 'Başlangıç' },
+  { value: 'intermediate', label: 'Orta' },
+  { value: 'advanced', label: 'İleri' },
+];
+export const cities: City[] = [
+  { id: '1', name: 'İstanbul' },
+  { id: '2', name: 'Ankara' },
+];
+export const districts: District[] = [
+  { id: '1', cityId: '1', name: 'Kadıköy' },
+  { id: '2', cityId: '1', name: 'Beşiktaş' },
+];
+export const venues: Venue[] = [
+  { id: '1', name: 'Boğaziçi Spor Salonu', districtId: '6', address: 'Bebek Kampüsü', type: 'indoor' },
+  { id: '2', name: 'Bebek Sahil Basketbol Sahası', districtId: '6', address: 'Bebek Sahili', type: 'outdoor' },
+];
+export const gameSkillLevels: { value: GameSkillLevel; label: string }[] = [
+  { value: 'everyone', label: 'Herkes Katılabilir' },
+  { value: 'beginner', label: 'Başlangıç' },
+];
 
 export const mockGames: Game[] = [
   {
@@ -17,7 +51,7 @@ export const mockGames: Game[] = [
     endTime: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
     totalPlayers: 10,
     currentPlayers: 5,
-    skillLevel: 'Orta',
+    skillLevel: 'intermediate',
     description: 'Halı saha maçı',
     status: 'open',
     createdAt: new Date().toISOString(),
@@ -38,7 +72,7 @@ export const mockGames: Game[] = [
     endTime: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(),
     totalPlayers: 10,
     currentPlayers: 10,
-    skillLevel: 'İleri',
+    skillLevel: 'advanced',
     description: '3v3 maç',
     status: 'full',
     createdAt: new Date().toISOString(),
