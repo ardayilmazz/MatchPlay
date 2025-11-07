@@ -1,0 +1,163 @@
+import { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ChevronLeft, Mail } from 'lucide-react-native';
+import { colors, spacing, typography } from '@/constants/theme';
+import { authService } from '@/services/authService';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+
+export default function VerifyEmailScreen() {
+  const params = useLocalSearchParams();
+  const email = params.email as string;
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleVerify = async () => {
+    if (!code) {
+      setError('Doğrulama kodu gereklidir');
+      return;
+    }
+
+    setLoading(true);
+    const result = await authService.verifyEmail(email, code);
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.message || 'Doğrulama başarısız');
+    } else {
+      Alert.alert('Başarılı', 'E-posta doğrulandı!', [
+        {
+          text: 'Tamam',
+          onPress: () => router.push('/auth/login'),
+        },
+      ]);
+    }
+  };
+
+  const handleResend = () => {
+    Alert.alert('Bilgi', 'Doğrulama kodu e-postanıza tekrar gönderildi');
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ChevronLeft size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+
+        <View style={styles.iconContainer}>
+          <View style={styles.iconCircle}>
+            <Mail size={48} color={colors.primary[500]} />
+          </View>
+        </View>
+
+        <View style={styles.header}>
+          <Text style={styles.title}>E-posta Doğrula</Text>
+          <Text style={styles.subtitle}>
+            {email} adresine gönderilen 6 haneli doğrulama kodunu girin
+          </Text>
+        </View>
+
+        <View style={styles.form}>
+          <Input
+            label="Doğrulama Kodu"
+            placeholder="123456"
+            value={code}
+            onChangeText={(text) => {
+              setCode(text);
+              setError('');
+            }}
+            error={error}
+            keyboardType="number-pad"
+            maxLength={6}
+          />
+
+          <Button title="Doğrula" onPress={handleVerify} loading={loading} />
+
+          <TouchableOpacity style={styles.resendButton} onPress={handleResend}>
+            <Text style={styles.resendText}>Kodu Tekrar Gönder</Text>
+          </TouchableOpacity>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              Test için doğrulama kodu: <Text style={styles.infoCode}>123456</Text>
+            </Text>
+          </View>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  content: {
+    flex: 1,
+    padding: spacing.xl,
+  },
+  backButton: {
+    marginBottom: spacing.lg,
+  },
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  iconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.primary[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    marginBottom: spacing.xl,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: typography.sizes.xxxl,
+    fontWeight: typography.weights.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: typography.sizes.md,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: typography.sizes.md * typography.lineHeights.relaxed,
+  },
+  form: {
+    flex: 1,
+  },
+  resendButton: {
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  resendText: {
+    fontSize: typography.sizes.md,
+    color: colors.primary[500],
+    fontWeight: typography.weights.semibold,
+  },
+  infoBox: {
+    marginTop: spacing.xl,
+    padding: spacing.md,
+    backgroundColor: colors.neutral[100],
+    borderRadius: 8,
+  },
+  infoText: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  infoCode: {
+    fontWeight: typography.weights.bold,
+    color: colors.text.primary,
+  },
+});
