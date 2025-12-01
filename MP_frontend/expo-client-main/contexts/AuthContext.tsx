@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthState } from '@/types';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { User, AuthState, RegisterData } from '@/types'; // RegisterData'yı import et
 import { authService } from '@/services/authService';
 
 export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (registerData: RegisterData) => Promise<{ success: boolean; message?: string }>; // Parametreyi güncelle
   logout: () => Promise<void>;
   updateUser: (user: User) => Promise<{ success: boolean; message?: string }>;
   setUser: (user: User | null) => void;
@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return result;
   };
 
-  const register = async (firstName: string, lastName: string, email: string, password: string) => {
-    const result = await authService.register(firstName, lastName, email, password);
+  const register = async (registerData: RegisterData) => { // Parametreyi güncelle
+    const result = await authService.register(registerData); // Servisi yeni veriyle çağır
     if (result.success && result.user) {
       // Kayıt başarılıysa, kullanıcıyı state'e ata ve anında giriş yapmış say.
       setUser(result.user);
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return result;
   };
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     isAuthenticated: !!user,
     isLoading,
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     updateUser,
     setUser,
-  };
+  }), [user, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

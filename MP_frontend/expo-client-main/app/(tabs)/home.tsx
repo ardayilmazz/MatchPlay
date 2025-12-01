@@ -1,17 +1,20 @@
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import { useState, useEffect } from 'react';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { Trophy, Calendar, MapPin, TrendingUp, AlertCircle } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 import { gameService } from '@/services/gameService';
 import { statisticsService, GameStatistics } from '@/services/statisticsService';
-import { useLocation } from '@/hooks/useLocation';
+// import { useLocation } from '@/hooks/useLocation'; // Konum hook'unu devre dışı bırak
 import { Game } from '@/types';
 import StatisticsCard from '@/components/home/StatisticsCard';
 import InstantGamesSection from '@/components/home/InstantGamesSection';
 import QuickFilters, { QuickFilterType } from '@/components/home/QuickFilters';
 import GameCard from '@/components/GameCard';
 import Button from '@/components/Button';
+
+import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomeScreen() {
   const [statistics, setStatistics] = useState<GameStatistics | null>(null);
@@ -22,21 +25,32 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { location, error: locationError, hasPermission, requestPermission } = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const pathname = usePathname();
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
+
+  // --- KONUM ÖZELLİĞİ GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
+  const location = null;
+  const locationError = null;
+  const hasPermission = true; // Banner'ı gizlemek için true varsayalım
+  // const { location, error: locationError, hasPermission, requestPermission, isLoading: isLocationLoading } = useLocation();
+  // ---------------------------------------------------------
 
   const loadData = async () => {
     try {
+      setIsLoading(true); // Yüklemeyi burada başlatalım
       setError(null);
 
       const [stats, instant, filtered] = await Promise.all([
-        statisticsService.getHomeStatistics(location || undefined),
+        statisticsService.getHomeStatistics(/* location || undefined */), // Konum parametresini kaldır
         gameService.getGames({
           instantGames: true,
-          userLocation: location || undefined,
+          // userLocation: location || undefined, // Konum parametresini kaldır
         }),
         activeFilter ? getFilteredGames(activeFilter) : gameService.getGames({
           dateRange: 'today',
-          userLocation: location || undefined,
+          // userLocation: location || undefined, // Konum parametresini kaldır
           maxDistance: 2,
         }),
       ]);
@@ -58,27 +72,25 @@ export default function HomeScreen() {
       case 'today':
         return gameService.getGames({
           dateRange: 'today',
-          userLocation: location || undefined,
+          // userLocation: location || undefined, // Konum parametresini kaldır
         });
       case 'tomorrow':
         return gameService.getGames({
           dateRange: 'tomorrow',
-          userLocation: location || undefined,
+          // userLocation: location || undefined, // Konum parametresini kaldır
         });
       case 'week':
         return gameService.getGames({
           dateRange: 'week',
-          userLocation: location || undefined,
+          // userLocation: location || undefined, // Konum parametresini kaldır
         });
       case 'nearby':
-        return gameService.getGames({
-          maxDistance: 2,
-          userLocation: location || undefined,
-        });
+         // Bu özellik geçici olarak devre dışı
+        return Promise.resolve([]);
       case 'instant':
         return gameService.getGames({
           instantGames: true,
-          userLocation: location || undefined,
+          // userLocation: location || undefined, // Konum parametresini kaldır
         });
       default:
         return [];
@@ -86,8 +98,13 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    loadData();
-  }, [location]);
+    // Bu bileşen arka planda yüklense bile, sadece kullanıcı giriş yapmışsa
+    // VE şu anki yol (path) '/home' ise, yani bu ekran aktif olarak
+    // görünüyorsa verileri yükle. Bu, başlangıçtaki gereksiz yüklemeyi önler.
+    if (isAuthenticated && pathname === '/home') {
+      loadData();
+    }
+  }, [user, isAuthenticated, pathname]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -99,7 +116,7 @@ export default function HomeScreen() {
       setActiveFilter(null);
       const defaultGames = await gameService.getGames({
         dateRange: 'today',
-        userLocation: location || undefined,
+        // userLocation: location || undefined, // Konum parametresini kaldır
         maxDistance: 2,
       });
       setFilteredGames(defaultGames);
@@ -110,13 +127,8 @@ export default function HomeScreen() {
     }
   };
 
-  const handleRequestLocation = async () => {
-    const granted = await requestPermission();
-    if (granted) {
-      setIsLoading(true);
-      loadData();
-    }
-  };
+  // handleRequestLocation fonksiyonunu devre dışı bırakabilir veya silebiliriz.
+  // const handleRequestLocation = async () => { ... };
 
   const handleGamePress = (game: Game) => {
     router.push(`/game/${game.id}` as any);
@@ -160,6 +172,7 @@ export default function HomeScreen() {
         <Text style={styles.subtitle}>MatchPlay'e hoş geldiniz!</Text>
       </View>
 
+      {/* --- KONUM BANNER'LARI GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
       {!hasPermission && !locationError && (
         <View style={styles.locationBanner}>
           <MapPin size={20} color={colors.primary[500]} />
@@ -178,6 +191,7 @@ export default function HomeScreen() {
           <Text style={styles.errorBannerText}>{locationError}</Text>
         </View>
       )}
+      --------------------------------------------------------- */}
 
       {error && (
         <View style={styles.errorBanner}>
@@ -240,7 +254,7 @@ export default function HomeScreen() {
       <QuickFilters
         activeFilter={activeFilter}
         onFilterPress={handleFilterPress}
-        nearbyCount={statistics?.nearbyGames}
+        nearbyCount={0} // Yakınımda sayısını 0 olarak ayarlıyoruz
         instantCount={instantGames.length}
       />
 
@@ -284,7 +298,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.secondary,

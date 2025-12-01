@@ -28,6 +28,10 @@ export const districts: District[] = [
 export const venues: Venue[] = [
   { id: '1', name: 'Boğaziçi Spor Salonu', districtId: '6', address: 'Bebek Kampüsü', type: 'indoor' },
   { id: '2', name: 'Bebek Sahil Basketbol Sahası', districtId: '6', address: 'Bebek Sahili', type: 'outdoor' },
+  // Kadıköy için mekanlar
+  { id: '3', name: 'Kadıköy Moda Halı Saha', districtId: '1', address: 'Moda Sahili', type: 'outdoor' },
+  { id: '4', name: 'Red Kafe', districtId: '1', address: 'Moda Caddesi No: 45', type: 'indoor' },
+  { id: '5', name: 'Kadıköy Spor Salonu', districtId: '1', address: 'Bahariye Caddesi', type: 'indoor' },
 ];
 export const gameSkillLevels: { value: GameSkillLevel; label: string }[] = [
   { value: 'everyone', label: 'Herkes Katılabilir' },

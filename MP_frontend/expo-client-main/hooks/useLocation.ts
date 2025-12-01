@@ -16,6 +16,22 @@ export interface UseLocationResult {
   refreshLocation: () => Promise<void>;
 }
 
+// --- GEÇİCİ DEVRE DIŞI BIRAKMA ---
+// NOT: Bu hook, uygulama genelinde sonsuz render döngüsüne neden olduğu için
+// geçici olarak devre dışı bırakılmıştır. Konum özellikleri geliştirileceği zaman
+// bu hook'un mantığı yeniden yazılmalıdır.
+export const useLocation = (): UseLocationResult => {
+  return {
+    location: null,
+    error: null,
+    isLoading: false,
+    hasPermission: false, // İzin isteme banner'larının görünmesi için false yapıldı.
+    requestPermission: async () => false,
+    refreshLocation: async () => {},
+  };
+};
+
+/* --- ORİJİNAL KOD ---
 export const useLocation = (): UseLocationResult => {
   const [location, setLocation] = useState<LocationCoords | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,3 +123,4 @@ export const useLocation = (): UseLocationResult => {
     refreshLocation,
   };
 };
+*/

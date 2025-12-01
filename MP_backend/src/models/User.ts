@@ -12,6 +12,8 @@ export interface IUser extends Document {
   bio?: string;
   sports?: string[];
   skillLevel?: string;
+  birthDate?: Date;
+  isProfileCompleted?: boolean;
 }
 
 const UserSchema: Schema = new Schema({
@@ -19,14 +21,24 @@ const UserSchema: Schema = new Schema({
   password: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  profilePhoto: { type: String },
-  university: { type: String },
-  department: { type: String },
-  bio: { type: String },
+  profilePhoto: { type: String, required: false },
+  university: { type: String, required: false },
+  department: { type: String, required: false },
+  bio: { type: String, required: false },
   sports: [{ type: String }],
   skillLevel: { type: String },
+  birthDate: {
+    type: Date,
+    required: false, // Şimdilik zorunlu değil, register fonksiyonu dolduracak
+  },
+  isProfileCompleted: {
+    type: Boolean,
+    default: false,
+  },
 }, {
-  timestamps: true // Otomatik olarak createdAt ve updatedAt alanları ekler.
+  timestamps: true, // Otomatik olarak createdAt ve updatedAt alanları ekler.
 });
 
-export default mongoose.model<IUser>('User', UserSchema);
+const User = mongoose.model<IUser>('User', UserSchema);
+
+export default User;

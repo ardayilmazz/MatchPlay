@@ -1,10 +1,10 @@
-import { User } from '@/types';
+import { User, RegisterData } from '@/types'; // RegisterData tipini import et
 import { storageService } from './storageService';
 
 // Backend sunucunuzun adresi.
 // EĞER FİZİKSEL BİR TELEFONDA TEST EDİYORSANIZ:
 // 'localhost' yerine bilgisayarınızın yerel ağdaki IP adresini yazın.
-const API_URL = 'http://172.20.10.3:3001/api';
+const API_URL = 'https://unkempt-incogitantly-carolina.ngrok-free.dev/api'; // Örnek: 'https://1a2b-3c4d.ngrok.io/api'
 
 
 const isValidEduEmail = (email: string): boolean => {
@@ -12,19 +12,42 @@ const isValidEduEmail = (email: string): boolean => {
 };
 
 export const authService = {
-  async register(
-    firstName: string,
-    lastName: string,
-    email: string,
-    password: string
-  ): Promise<{ success: boolean; user?: User; message?: string }> {
+  async sendVerificationCode(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`${API_URL}/users/send-verification-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      return { success: response.ok, message: data.message };
+    } catch (error: any) {
+      return { success: false, message: error.message || 'Sunucuya bağlanılamadı.' };
+    }
+  },
+
+  async verifyCode(email: string, code: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`${API_URL}/users/verify-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await response.json();
+      return { success: response.ok, message: data.message };
+    } catch (error: any) {
+      return { success: false, message: error.message || 'Sunucuya bağlanılamadı.' };
+    }
+  },
+  
+  async register(registerData: RegisterData): Promise<{ success: boolean; user?: User; message?: string }> {
     try {
       const response = await fetch(`${API_URL}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify(registerData),
       });
 
       const data = await response.json();
@@ -33,18 +56,11 @@ export const authService = {
         throw new Error(data.message || 'Kayıt sırasında bir hata oluştu.');
       }
 
-      // Backend'den gelen kullanıcı ve token bilgisini AuthContext'e döndür.
-      // Şimdilik token'ı saklamıyoruz, sadece user objesini kullanıyoruz.
       return { success: true, user: data };
     } catch (error: any) {
       console.error('Register service error:', error);
       return { success: false, message: error.message || 'Sunucuya bağlanılamadı.' };
     }
-  },
-
-  async verifyEmail(email: string, code: string): Promise<{ success: boolean; message?: string }> {
-    // TODO: Implement email verification with the new backend
-    return { success: true };
   },
 
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; message?: string }> {

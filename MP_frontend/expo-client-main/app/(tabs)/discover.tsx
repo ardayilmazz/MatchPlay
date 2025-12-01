@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SlidersHorizontal, MapPin, AlertCircle } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 import { gameService } from '@/services/gameService';
-import { useLocation } from '@/hooks/useLocation';
+// import { useLocation } from '@/hooks/useLocation'; // Konum hook'unu devre dışı bırak
 import GameCard from '@/components/GameCard';
 import GameFiltersModal, { GameFilters } from '@/components/GameFilters';
 import Button from '@/components/Button';
@@ -28,14 +28,20 @@ export default function DiscoverScreen() {
     instantGames: false,
   });
 
-  const { location, error: locationError, hasPermission, requestPermission, isLoading: locationLoading } = useLocation();
+  // --- KONUM ÖZELLİĞİ GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
+  const location = null;
+  const locationError = null;
+  const hasPermission = true; // Banner'ı gizlemek için true varsayalım
+  // const { location, error: locationError, hasPermission, requestPermission, isLoading: locationLoading } = useLocation();
+  // ---------------------------------------------------------
 
   const loadGames = async () => {
     try {
+      setIsLoading(true); // Yüklemeyi burada başlatalım
       setError(null);
       const filterParams = {
         ...activeFilters,
-        userLocation: location || undefined,
+        // userLocation: location || undefined, // Konum parametresini kaldır
       };
       const fetchedGames = await gameService.getGames(filterParams);
       setGames(fetchedGames);
@@ -48,8 +54,9 @@ export default function DiscoverScreen() {
   };
 
   useEffect(() => {
+    // Konum bağımlılığını kaldırıyoruz, sadece filtrelere göre çalışacak.
     loadGames();
-  }, [activeFilters, location]);
+  }, [activeFilters]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -61,13 +68,9 @@ export default function DiscoverScreen() {
     setIsLoading(true);
   };
 
-  const handleRequestLocation = async () => {
-    const granted = await requestPermission();
-    if (granted) {
-      setIsLoading(true);
-      loadGames();
-    }
-  };
+  // handleRequestLocation fonksiyonunu devre dışı bırakabilir veya silebiliriz.
+  // const handleRequestLocation = async () => { ... };
+
 
   const getActiveFilterCount = () => {
     let count = 0;
@@ -75,7 +78,8 @@ export default function DiscoverScreen() {
     if (activeFilters.cityId) count++;
     if (activeFilters.districtId) count++;
     if (activeFilters.skillLevels.length > 0) count++;
-    if (activeFilters.maxDistance !== 2) count++;
+    // maxDistance filtresini saymıyoruz çünkü geçici olarak devre dışı
+    // if (activeFilters.maxDistance !== 2) count++;
     if (activeFilters.dateRange !== 'all') count++;
     if (activeFilters.onlyAvailable) count++;
     if (activeFilters.instantGames) count++;
@@ -99,6 +103,7 @@ export default function DiscoverScreen() {
         </Pressable>
       </View>
 
+      {/* --- KONUM BANNER'LARI GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
       {!hasPermission && !locationLoading && (
         <View style={styles.locationPrompt}>
           <MapPin size={16} color={colors.text.secondary} />
@@ -117,6 +122,7 @@ export default function DiscoverScreen() {
           <Text style={styles.errorBannerText}>{locationError}</Text>
         </View>
       )}
+      --------------------------------------------------------- */}
 
       <Text style={styles.resultCount}>
         {games.length} oyun bulundu

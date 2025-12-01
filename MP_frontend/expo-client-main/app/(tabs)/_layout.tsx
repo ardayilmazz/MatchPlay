@@ -56,16 +56,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profil',
           tabBarIcon: ({ size, color }) => <User size={size} color={color} />,
+        }}
+      />
+      {/* Hidden Tabs */}
+      <Tabs.Screen
+        name="messages"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen
