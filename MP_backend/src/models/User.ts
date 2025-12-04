@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 // IUser arayüzü, TypeScript'in User objesinin yapısını anlamasını sağlar.
 export interface IUser extends Document {
   email: string;
-  password?: string; // Şifre her zaman gönderilmeyebilir, bu yüzden opsiyonel.
+  password: string;
   firstName: string;
   lastName: string;
   profilePhoto?: string;
@@ -14,6 +14,8 @@ export interface IUser extends Document {
   skillLevel?: string;
   birthDate?: Date;
   isProfileCompleted?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const UserSchema: Schema = new Schema({

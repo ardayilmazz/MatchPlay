@@ -44,5 +44,16 @@ export interface Game {
 export interface User {
   id: string;
   _id?: string;
-  // ... existing code ...
+  email: string;
+  firstName: string;
+  lastName: string;
+  profilePhoto?: string;
+  university: string;
+  department: string;
+  bio?: string;
+  sports: string[];
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced';
+  averageRating?: number;
+  totalGames?: number;
+  createdAt: string;
 }

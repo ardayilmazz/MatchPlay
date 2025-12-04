@@ -21,6 +21,9 @@ import { useAuth } from '@/contexts/AuthContext'; // useAuth hook'unu import et
 
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import DatePicker from '@/components/DatePicker';
+import Picker from '@/components/Picker';
+import { universities, departments } from '@/services/mockData';
 
 // Adımları tanımlayalım
 type Step =
@@ -28,6 +31,7 @@ type Step =
   | 'EMAIL_VERIFY'
   | 'PASSWORD_ENTRY'
   | 'USER_INFO'
+  | 'UNIVERSITY_INFO'
   | 'PROFILE_PHOTO'
   | 'BIO';
 
@@ -134,11 +138,29 @@ export default function RegisterScreen() {
     const { firstName, lastName, birthDate, email } = formData;
     const newErrors: { [key: string]: string } = {};
 
-    if (!firstName) newErrors.firstName = 'Ad gereklidir.';
-    if (!lastName) newErrors.lastName = 'Soyad gereklidir.';
+    if (!firstName) {
+      newErrors.firstName = 'Ad gereklidir.';
+    } else {
+      // Türkçe karakterler dahil sadece harf kontrolü (ı, İ, ğ, ü, ş, ö, ç, Ğ, Ü, Ş, Ö, Ç)
+      const nameRegex = /^[a-zA-ZğüşöçıİĞÜŞÖÇI\s]+$/;
+      if (!nameRegex.test(firstName)) {
+        newErrors.firstName = 'Sadece harf kullanabilirsiniz.';
+      }
+    }
+
+    if (!lastName) {
+      newErrors.lastName = 'Soyad gereklidir.';
+    } else {
+      // Türkçe karakterler dahil sadece harf kontrolü (ı, İ, ğ, ü, ş, ö, ç, Ğ, Ü, Ş, Ö, Ç)
+      const nameRegex = /^[a-zA-ZğüşöçıİĞÜŞÖÇI\s]+$/;
+      if (!nameRegex.test(lastName)) {
+        newErrors.lastName = 'Sadece harf kullanabilirsiniz.';
+      }
+    }
+
     if (!birthDate) newErrors.birthDate = 'Doğum tarihi gereklidir.';
 
-    // 18 yaş kontrolü
+    // 17 yaş kontrolü
     if (birthDate) {
       const today = new Date();
       const birth = new Date(birthDate);
@@ -147,31 +169,26 @@ export default function RegisterScreen() {
       if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
         age--;
       }
-      if (age < 18) {
-        newErrors.birthDate = '18 yaşından büyük olmalısınız.';
+      if (age < 17) {
+        newErrors.birthDate = '17 yaşından büyük olmalısınız.';
       }
     }
 
-    // E-posta isim/soyisim kontrolü
-    if (firstName && lastName && email) {
-      const normalizeText = (text: string) => {
-        return text.toLowerCase()
-          .replace(/ı/g, 'i')
-          .replace(/ğ/g, 'g')
-          .replace(/ü/g, 'u')
-          .replace(/ş/g, 's')
-          .replace(/ö/g, 'o')
-          .replace(/ç/g, 'c');
-      };
-      const normalizedFirstName = normalizeText(firstName);
-      const normalizedLastName = normalizeText(lastName);
-      const emailUsername = email.split('@')[0];
+    setErrors(newErrors);
 
-      if (!emailUsername.includes(normalizedFirstName) || !emailUsername.includes(normalizedLastName)) {
-        newErrors.emailMatch = 'İsim ve soyisim, e-posta adresinizle eşleşmelidir.';
-      }
+    if (Object.keys(newErrors).length === 0) {
+      // Bir sonraki adıma geç
+      setStep('UNIVERSITY_INFO');
     }
+  };
 
+  // Adım 4.5: Üniversite ve bölüm seçimi
+  const handleUniversityInfoSubmit = () => {
+    const { university, department } = formData;
+    const newErrors: { [key: string]: string } = {};
+
+    if (!university) newErrors.university = 'Üniversite seçimi zorunludur.';
+    
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
@@ -215,6 +232,8 @@ export default function RegisterScreen() {
       firstName: formData.firstName!,
       lastName: formData.lastName!,
       birthDate: formData.birthDate!,
+      university: formData.university || '',
+      department: formData.department || '',
       profilePhoto: formData.profilePhoto || '',
       bio: formData.bio || '',
     };
@@ -224,11 +243,10 @@ export default function RegisterScreen() {
     setLoading(false);
 
     if (result.success && result.user) {
-      // Kullanıcı session'ını başlat. Bu, _layout.tsx'teki useEffect'i tetikleyecek.
-      setUser(result.user); 
-      Alert.alert('Hoş Geldin!', 'Kaydın başarıyla tamamlandı.');
-      // Yönlendirme artık _layout.tsx tarafından otomatik olarak yapılacak.
-      // router.replace('/(tabs)' as any); 
+      // Kullanıcı session'ını başlat
+      setUser(result.user);
+      // Ana sayfaya yönlendir
+      router.replace('/(tabs)/home');
     } else {
       setGeneralError(result.message || 'Kayıt işlemi sırasında bir hata oluştu.');
     }
@@ -345,11 +363,11 @@ export default function RegisterScreen() {
           autoCapitalize="words"
         />
       </View>
-      <Input
+      <DatePicker
         label="Doğum Tarihi"
-        placeholder="YYYY-MM-DD"
-        value={formData.birthDate || ''}
-        onChangeText={(text) => setFormData({ ...formData, birthDate: text })}
+        placeholder="Yıl - Ay - Gün"
+        value={formData.birthDate}
+        onValueChange={(value) => setFormData({ ...formData, birthDate: value })}
         error={errors.birthDate}
       />
        {errors.emailMatch && <Text style={styles.errorTextAlone}>{errors.emailMatch}</Text>}
@@ -360,6 +378,52 @@ export default function RegisterScreen() {
       />
     </>
   );
+
+  // Üniversite bilgisi adımını render eden fonksiyon
+  const renderUniversityInfoStep = () => {
+    const universityOptions = universities.map((uni) => ({
+      label: uni.name,
+      value: uni.name,
+    }));
+
+    const departmentOptions = departments.map((dept) => ({
+      label: dept.name,
+      value: dept.name,
+    }));
+
+    return (
+      <>
+        <Text style={styles.subtitle}>
+          Üniversite bilgilerini gir. {'\n'}
+          <Text style={styles.infoText}>
+            (Kayıt olurken üniversite seçimi zorunludur. Çünkü uygulamamız sadece belli okullar girdiğiniz zaman kullanabilecek. O yüzden ilk önce okul sorsun.)
+          </Text>
+        </Text>
+        <Picker
+          label="Üniversite"
+          placeholder="Üniversitenizi seçin"
+          options={universityOptions}
+          value={formData.university || ''}
+          onValueChange={(value) => setFormData({ ...formData, university: value })}
+          error={errors.university}
+          searchable
+        />
+        <Picker
+          label="Bölüm (İsteğe bağlı)"
+          placeholder="Bölümünüzü seçin"
+          options={departmentOptions}
+          value={formData.department || ''}
+          onValueChange={(value) => setFormData({ ...formData, department: value })}
+          searchable
+        />
+        <Button
+          title="Devam Et"
+          onPress={handleUniversityInfoSubmit}
+          style={styles.button}
+        />
+      </>
+    );
+  };
 
   // Profil fotoğrafı adımını render eden fonksiyon
   const renderProfilePhotoStep = () => (
@@ -394,6 +458,9 @@ export default function RegisterScreen() {
   const renderBioStep = () => (
     <>
       <Text style={styles.subtitle}>Kendinden kısaca bahset (isteğe bağlı).</Text>
+      <Text style={styles.infoText}>
+        Bu bilgileri daha sonra profil güncelleme sayfasından değiştirebilirsin.
+      </Text>
       <Input
         label="Biyografi"
         placeholder="Maksimum 50 karakter"
@@ -427,6 +494,8 @@ export default function RegisterScreen() {
         return renderPasswordEntryStep();
       case 'USER_INFO':
         return renderUserInfoStep();
+      case 'UNIVERSITY_INFO':
+        return renderUniversityInfoStep();
       case 'PROFILE_PHOTO':
         return renderProfilePhotoStep();
       case 'BIO':
@@ -442,6 +511,7 @@ export default function RegisterScreen() {
       case 'EMAIL_VERIFY': return 'E-postanı Doğrula';
       case 'PASSWORD_ENTRY': return 'Şifre Oluştur';
       case 'USER_INFO': return 'Seni Tanıyalım';
+      case 'UNIVERSITY_INFO': return 'Üniversite Bilgileri';
       case 'PROFILE_PHOTO': return 'Fotoğraf Ekle';
       case 'BIO': return 'Biyografi Ekle';
       default: return 'Hesap Oluştur';
@@ -574,6 +644,13 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  infoText: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
+    marginBottom: spacing.md,
+    lineHeight: 20,
   },
   // Fotoğraf stilleri
   photoSection: {

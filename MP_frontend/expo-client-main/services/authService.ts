@@ -1,10 +1,6 @@
-import { User, RegisterData } from '@/types'; // RegisterData tipini import et
+import { User, RegisterData } from '@/types';
 import { storageService } from './storageService';
-
-// Backend sunucunuzun adresi.
-// EĞER FİZİKSEL BİR TELEFONDA TEST EDİYORSANIZ:
-// 'localhost' yerine bilgisayarınızın yerel ağdaki IP adresini yazın.
-const API_URL = 'https://unkempt-incogitantly-carolina.ngrok-free.dev/api'; // Örnek: 'https://1a2b-3c4d.ngrok.io/api'
+import { API_URL } from '@/config/api';
 
 
 const isValidEduEmail = (email: string): boolean => {
@@ -56,7 +52,26 @@ export const authService = {
         throw new Error(data.message || 'Kayıt sırasında bir hata oluştu.');
       }
 
-      return { success: true, user: data };
+      // Token'ı sakla
+      if (data.token) {
+        await storageService.setToken(data.token);
+      }
+
+      // User nesnesini düzenle
+      const user: User = {
+        id: data._id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        university: data.university || '',
+        department: data.department || '',
+        profilePhoto: data.profilePhoto || '',
+        bio: data.bio || '',
+        sports: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      return { success: true, user };
     } catch (error: any) {
       console.error('Register service error:', error);
       return { success: false, message: error.message || 'Sunucuya bağlanılamadı.' };
@@ -64,47 +79,153 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; message?: string }> {
-    console.log('Logging in user:', { email, password });
-    // TODO: Implement login with the new backend
-    // For now, returning a mock user
-    const mockUser: User = {
-      id: '1',
-      email: email,
-      firstName: 'Test',
-      lastName: 'User',
-      university: 'Test University',
-      department: 'Test Department',
-      sports: [],
-      createdAt: new Date().toISOString(),
-    };
-    return { success: true, user: mockUser };
+    try {
+      const response = await fetch(`${API_URL}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Giriş yapılamadı.');
+      }
+
+      // Token'ı sakla
+      if (data.token) {
+        await storageService.setToken(data.token);
+      }
+
+      // User nesnesini düzenle (backend'den gelen _id'yi id'ye çevir)
+      const user: User = {
+        id: data._id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        university: data.university || '',
+        department: data.department || '',
+        profilePhoto: data.profilePhoto,
+        bio: data.bio,
+        sports: data.sports || [],
+        createdAt: data.createdAt || new Date().toISOString(),
+      };
+
+      return { success: true, user };
+    } catch (error: any) {
+      console.error('Login service error:', error);
+      return { success: false, message: error.message || 'Sunucuya bağlanılamadı.' };
+    }
   },
 
   async logout(): Promise<void> {
-    // TODO: Implement logout with the new backend
-    console.log('Logging out user');
+    try {
+      await storageService.removeToken();
+      console.log('Kullanıcı çıkış yaptı');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   },
 
   async getCurrentUser(): Promise<User | null> {
-    // TODO: Implement fetching the current user with the new backend
-    // For now, returning a mock user
-    const mockUser: User = {
-      id: '1',
-      email: 'user@example.edu',
-      firstName: 'Test',
-      lastName: 'User',
-      university: 'Test University',
-      department: 'Test Department',
-      sports: [],
-      createdAt: new Date().toISOString(),
-    };
-    return mockUser;
+    try {
+      const token = await storageService.getToken();
+      
+      if (!token) {
+        return null;
+      }
+
+      const response = await fetch(`${API_URL}/users/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Token geçersiz veya süresi dolmuş
+        await storageService.removeToken();
+        return null;
+      }
+
+      const data = await response.json();
+
+      // User nesnesini düzenle
+      const user: User = {
+        id: data._id || data.id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        university: data.university || '',
+        department: data.department || '',
+        profilePhoto: data.profilePhoto,
+        bio: data.bio,
+        sports: data.sports || [],
+        createdAt: data.createdAt || new Date().toISOString(),
+      };
+
+      return user;
+    } catch (error: any) {
+      console.error('Get current user error:', error);
+      return null;
+    }
   },
 
   async updateUser(user: User): Promise<{ success: boolean; user?: User; message?: string }> {
-    console.log('Updating user:', user);
-    // TODO: Implement user update with the new backend
-    return { success: true, user };
+    try {
+      const token = await storageService.getToken();
+      
+      if (!token) {
+        return { success: false, message: 'Token bulunamadı. Lütfen tekrar giriş yapın.' };
+      }
+
+      const response = await fetch(`${API_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          university: user.university,
+          department: user.department,
+          bio: user.bio,
+          profilePhoto: user.profilePhoto,
+          sports: user.sports,
+          skillLevel: user.skillLevel,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Profil güncellenemedi.');
+      }
+
+      // User nesnesini düzenle
+      const updatedUser: User = {
+        id: data._id || data.id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        university: data.university || '',
+        department: data.department || '',
+        profilePhoto: data.profilePhoto,
+        bio: data.bio,
+        sports: data.sports || [],
+        skillLevel: data.skillLevel,
+        createdAt: data.createdAt || new Date().toISOString(),
+      };
+
+      return { success: true, user: updatedUser };
+    } catch (error: any) {
+      console.error('Update user error:', error);
+      return { success: false, message: error.message || 'Sunucuya bağlanılamadı.' };
+    }
   },
 
   async resetPassword(email: string): Promise<{ success: boolean; message?: string }> {

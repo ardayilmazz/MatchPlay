@@ -4,86 +4,129 @@ Bu dosya, MatchPlay projesinin geliştirme sürecinde yapılan işlemleri ve al�
 
 ## Aşama 1: Projeyi Supabase'den Arındırma
 
-- `MP_docs/yapilan_islemler.md` dosyası oluşturuldu.
-- Frontend projesinin (`MP_frontend/expo-client-main`) `package.json` dosyasından `@supabase/supabase-js` bağımlılığı kaldırıldı.
-- `npm install` komutu çalıştırılarak `node_modules` ve `package-lock.json` güncellendi.
-- `lib/supabase.ts` dosyası ve `supabase` veritabanı migrasyon klasörü projeden silindi.
-- Supabase kullanan tüm servis dosyaları (`authService`, `storageService`, `gameService`, `gameRequestService`, `notificationService`, `statisticsService`, `waitlistService`) temizlendi.
-- Servislerin çalışmaya devam etmesi için sahte veri içeren `mockData.ts` dosyası oluşturuldu.
-- Supabase import'u içeren `app/game/[id].tsx` component dosyası temizlendi.
+- Supabase bağımlılıkları (`@supabase/supabase-js`) kaldırıldı
+- Supabase kullanan tüm servis dosyaları temizlendi (`authService`, `storageService`, `gameService`, vb.)
+- Servislerin çalışmaya devam etmesi için `mockData.ts` dosyası oluşturuldu
+- Frontend'deki Supabase import'ları kaldırıldı
 
 ## Aşama 2: Node.js & MongoDB Backend Kurulumu
 
-- `MP_backend` klasöründe `npm init` ile yeni bir Node.js projesi başlatıldı.
-- Gerekli bağımlılıklar (`express`, `mongoose`, `dotenv`, `cors`) ve geliştirme bağımlılıkları (`typescript`, `ts-node-dev`, `@types/*`) kuruldu.
-- TypeScript için `tsconfig.json` yapılandırma dosyası oluşturuldu.
-- `src/index.ts` dosyası oluşturuldu ve içine temel bir Express sunucusu kuruldu.
-- Sunucuyu geliştirme modunda çalıştırmak için `package.json` dosyasına `dev` script'i eklendi.
-- Proje kök dizinine `.gitignore` dosyası eklendi.
-- MongoDB Atlas'tan alınan bağlantı dizesi ile `.env` dosyası oluşturuldu.
-- `src/config/db.ts` dosyası oluşturularak veritabanı bağlantı mantığı Mongoose kullanılarak yazıldı.
-- `src/index.ts` dosyası, sunucu başlamadan önce veritabanı bağlantısını kuracak şekilde güncellendi.
-
-### Kullanıcı Kayıt Endpoint'i
-
-- Şifreleri güvenli bir şekilde hash'lemek için `bcryptjs` paketi projeye eklendi.
-- `src` altında `models`, `controllers`, `routes` klasörleri oluşturularak proje yapısı düzenlendi.
-- `models/User.ts` dosyasında, bir kullanıcının veritabanında saklanacak bilgilerini içeren Mongoose şeması ve modeli oluşturuldu.
-- `controllers/userController.ts` dosyasında, yeni kullanıcı kaydı mantığını (e-posta kontrolü, şifre hash'leme, veritabanına kaydetme) içeren `registerUser` fonksiyonu yazıldı.
-- `routes/userRoutes.ts` dosyasında, `POST /api/users/register` endpoint'i tanımlandı ve `registerUser` controller'ına bağlandı.
-- Ana sunucu dosyası `index.ts`, `/api/users` ile başlayan istekleri `userRoutes`'a yönlendirecek şekilde güncellendi.
-
-### Sorun Giderme ve Ek Notlar
-
-- **Backend Kurulumu:** `npm` komutlarının hatalı dizinlerde çalışması nedeniyle `package.json` dosyası manuel olarak oluşturuldu ve bağımlılıklar sonradan eklendi. TypeScript tip hatalarını çözmek için `node_modules` klasörü silinip `npm install` komutuyla temiz bir kurulum yapıldı.
-- **Git Kurulumu:** Proje `git init` ile yerel bir depoya dönüştürüldü. `git remote` komutlarındaki yazım hataları düzeltildi ve Windows Kimlik Bilgileri Yöneticisi'nden eski GitHub hesabının temizlenmesiyle `private` depoya `push` işlemi başarıyla tamamlandı.
-- **Frontend Hataları:** Supabase'den geçiş sonrası `AuthContext`, `Input` component'i ve çeşitli servislerdeki (`authService`, `mockData` vb.) tipler ve fonksiyon çağrıları, yeni backend yapısıyla uyumlu olacak şekilde güncellendi.
-
-### Otomatik Giriş (Auto-Login) Akışı
-
-- **Amaç:** Kullanıcının kayıt olduktan sonra tekrar giriş yapma zorunluluğunu ortadan kaldırmak ve doğrudan bir sonraki adıma (profil oluşturma) yönlendirmek.
-- **Backend:** `jsonwebtoken` kütüphanesi projeye eklendi. `registerUser` controller'ı, başarılı bir kayıttan sonra kullanıcı bilgileriyle birlikte bir JWT (JSON Web Token) üretecek şekilde güncellendi.
-- **Frontend:** `authService`, `AuthContext` ve `register.tsx` dosyaları bu yeni akışı destekleyecek şekilde güncellendi. Kayıt başarılı olduğunda, backend'den gelen kullanıcı bilgileri ve token ile `AuthContext`'teki kullanıcı durumu güncellenerek otomatik giriş sağlandı ve kullanıcı `/onboarding/basic-info` ekranına yönlendirildi.
-
-### Onboarding (Profil Oluşturma) Akışı
-
-- **Profil Fotoğrafı Zorunluluğu Kaldırıldı:** Kullanıcının profil oluşturma sürecini tamamlayabilmesi için `basic-info.tsx` ekranındaki profil fotoğrafı yükleme zorunluluğu kaldırıldı.
-
-### Oyun Oluşturma Akışı
-
-- **Konum Verisi Düzeltmesi:** Oyun oluşturma akışının konum seçme adımında, Kadıköy ilçesi için eksik olan mekan (venue) verileri `mockData.ts` dosyasına eklendi.
+- Express.js backend kuruldu (TypeScript ile)
+- MongoDB Atlas bağlantısı yapıldı (Mongoose kullanılarak)
+- Kullanıcı kayıt endpoint'i oluşturuldu (`POST /api/users/register`)
+- Bcrypt ile şifre hash'leme sistemi kuruldu
+- JWT token sistemi eklendi (otomatik giriş için)
 
 ## Aşama 3: Gelişmiş Kayıt Akışı (E-posta Doğrulamalı)
 
-- **Amaç:** Güvenliği ve kullanıcı veri doğruluğunu artırmak için kayıt sürecini çok adımlı bir yapıya dönüştürmek.
+**Backend:**
+- Nodemailer ile e-posta gönderim sistemi kuruldu
+- `VerificationCode` modeli oluşturuldu (6 haneli kod, 10 dakika geçerlilik)
+- `POST /api/users/send-verification-code` endpoint'i eklendi
+- `POST /api/users/verify-code` endpoint'i eklendi
+- Register endpoint'i tüm kullanıcı bilgilerini alacak şekilde güncellendi
 
-### Backend Geliştirmeleri
-- **E-posta Altyapısı:** `nodemailer` paketi projeye eklenerek e-posta gönderim yeteneği kazandırıldı. Gmail "Uygulama Şifresi" kullanılarak SMTP yapılandırması `.env` dosyasına eklendi.
-- **Doğrulama Kodu Modeli:** `VerificationCode.ts` adında yeni bir Mongoose modeli oluşturuldu. Bu model, e-posta, 6 haneli kod ve kodun 10 dakikalık son kullanma tarihini geçici olarak saklar.
-- **Yeni Endpoint 1 (`/send-verification-code`):** Kullanıcının girdiği e-postanın veritabanında kayıtlı olup olmadığını kontrol eden, kayıtlı değilse 6 haneli bir kod üretip bunu `VerificationCode` koleksiyonuna kaydeden ve `nodemailer` aracılığıyla kullanıcıya gönderen bir endpoint oluşturuldu.
-- **Yeni Endpoint 2 (`/verify-code`):** Kullanıcının girdiği e-posta ve kodun veritabanındaki kayıtla eşleşip eşleşmediğini ve süresinin dolup dolmadığını kontrol eden bir endpoint oluşturuldu. Başarılı doğrulamada geçici kod veritabanından silinir.
-- **Register Endpoint'i Güncellemesi:** Mevcut `/register` endpoint'i, kayıt akışının en sonunda tüm kullanıcı bilgilerini (isim, soyisim, şifre, doğum tarihi vb.) tek seferde alıp `User` koleksiyonuna kaydedecek şekilde tamamen yeniden yapılandırıldı.
-
-### Frontend Geliştirmeleri
-- **`authService` Güncellemesi:** Backend'de oluşturulan yeni endpoint'lere (`sendVerificationCode`, `verifyCode`) istek atacak fonksiyonlar eklendi. `register` fonksiyonu, tüm adımlardan toplanan verileri tek seferde gönderecek şekilde güncellendi.
-- **Çok Adımlı Form Yapısı:** `register.tsx` dosyası, `step` state'i ile yönetilen 6 adımlı bir "wizard" (sihirbaz) formuna dönüştürüldü:
-  1.  **E-posta Girişi:** Kullanıcıdan sadece e-posta alınır ve kod gönderme işlemi tetiklenir.
-  2.  **Kod Doğrulama:** 6 haneli kod girişi istenir. "Tekrar Kod Gönder" butonu için 30 saniyelik bir bekleme (cooldown) mekanizması kuruldu.
-  3.  **Şifre Oluşturma:** Minimum 6 karakter uzunluğunda ve onaylı şifre girişi istenir.
-  4.  **Kişisel Bilgiler:** İsim, soyisim ve doğum tarihi istenir. Bu adımda 18 yaş kontrolü ve kullanıcının ad/soyadının e-posta adresiyle eşleşme kontrolü gibi özel doğrulamalar eklendi.
-  5.  **Profil Fotoğrafı:** `ImagePicker` kullanılarak, kullanıcının isteğe bağlı olarak fotoğraf ekleyebileceği bir arayüz oluşturuldu ("Şimdilik Atla" seçeneği ile).
-  6.  **Biyografi:** Kullanıcının isteğe bağlı olarak 50 karakterlik bir biyografi ekleyebileceği son bir arayüz oluşturuldu. Bu adım tamamlandığında veya atlandığında, toplanan tüm verilerle kayıt işlemi gerçekleştirilir ve kullanıcı ana sayfaya yönlendirilir.
+**Frontend:**
+- 6 adımlı kayıt formu oluşturuldu:
+  1. E-posta girişi ve kod gönderme
+  2. 6 haneli kod doğrulama (30 saniye cooldown ile tekrar gönderme)
+  3. Şifre oluşturma (minimum 6 karakter)
+  4. Kişisel bilgiler (isim, soyisim, doğum tarihi - 18 yaş kontrolü)
+  5. Profil fotoğrafı (isteğe bağlı)
+  6. Biyografi (isteğe bağlı, maksimum 50 karakter)
 
 ## Aşama 4: Hata Giderme ve Stabilizasyon
 
-- **Kayıt Sonrası Yönlendirme Sorunu:** Kayıt işlemi tamamlandıktan sonra ana sayfaya yönlendirme sırasında ortaya çıkan "This screen doesn't exist" hatası giderildi. Çözüm olarak, yönlendirme mantığı `_layout.tsx` dosyasında merkezileştirildi. Artık bu dosya, kullanıcının kimlik doğrulama durumunu (`isAuthenticated`) dinleyerek, giriş yapmış kullanıcıları otomatik olarak ana sayfaya, yapmamış olanları ise giriş ekranına yönlendiriyor.
-- **TypeScript Tip Hataları:** Geliştirme sürecinde `register.tsx` ve `AuthContext.tsx` gibi dosyalarda ortaya çıkan `AuthState`, `Game`, `pathname` gibi tip hataları, eksik tiplerin `types.ts` dosyasına eklenmesi ve hatalı yönlendirme fonksiyonlarının düzeltilmesiyle giderildi.
-- **Ana Sayfa Sonsuz Yükleme Sorunu:** Ana sayfanın (`home.tsx`), konum bilgisi (`userLocation`) alınamadığı için sonsuz bir veri çekme döngüsüne girmesi sorunu çözüldü. İleride tekrar ele alınmak üzere, konumla ilgili tüm özellikler (`useLocation` hook'u, ilgili filtreler ve arayüz elemanları) geçici olarak devre dışı bırakılarak ana sayfanın stabil bir şekilde yüklenmesi sağlandı.
+- Kayıt sonrası yönlendirme sorunu düzeltildi (`_layout.tsx` merkezileştirildi)
+- TypeScript tip hataları giderildi (`types.ts` güncellendi)
+- Ana sayfa sonsuz yükleme sorunu çözüldü (konum özellikleri geçici olarak devre dışı)
 
+## Aşama 5: Backend Loglama Sistemi
 
-## Aşama 5: Çözülemeyen Sonsuz Döngü Sorunu ve Projenin Duraklatılması
+- Request/Response middleware logları eklendi (şifreler gizlenir)
+- Controller fonksiyonlarına detaylı loglar eklendi
+- Veritabanı bağlantı logları eklendi
+- Log formatı sadeleştirildi (emoji ve dekoratif öğeler kaldırıldı)
+- Backend port'u 3001'e değiştirildi
 
-- **Problem:** Önceki tüm stabilizasyon çabalarına rağmen, uygulama ana sayfada inatçı bir sonsuz render döngüsü sergilemeye devam etti. Bu durum, uygulamanın donmasına ve kullanılamaz hale gelmesine neden oldu.
-- **Kök Neden Analizi:** Sorunun, `home.tsx` bileşeninin kendisinden ziyade, uygulamanın en üst seviyesindeki `AuthContext`'in her render'da yeni bir `value` nesnesi oluşturmasından kaynaklandığı tespit edildi. Bu durum, tüm uygulama ağacının sürekli olarak yeniden render edilmesine yol açan bir "yeniden render fırtınası"nı tetikliyordu.
-- **Son Düzeltme Girişimi:** Sorunun kök nedenini çözmek için `AuthContext.tsx` dosyasında, context'in `value` değeri `useMemo` hook'u ile sarmalanarak stabilize edildi. Bu değişikliğin, gereksiz render'ları önleyerek döngüyü kırması hedeflendi.
-- **Sonuç:** Yapılan son müdahaleye rağmen, kullanıcı tarafında sorun çözülemedi ve yaşanan hayal kırıklığı üzerine projenin bu noktada duraklatılmasına karar verildi. Sorunun çözülemediği bu dosyaya not olarak eklenmiştir.
+**Güvenlik İyileştirmesi:**
+- E-posta isim/soyisim eşleşme kontrolü kaldırıldı (kullanıcı deneyimi için)
+
+## Aşama 6: JWT Tabanlı Login Sistemi
+
+**Backend:**
+- `POST /api/users/login` endpoint'i oluşturuldu (e-posta/şifre doğrulama, JWT token üretimi)
+- Auth middleware oluşturuldu (`protect` - JWT token doğrulama)
+- `GET /api/users/me` endpoint'i eklendi (korumalı, giriş yapmış kullanıcı bilgileri)
+- User model'ine `createdAt` ve `updatedAt` alanları eklendi
+
+**Frontend:**
+- AsyncStorage ile token yönetimi eklendi (`storageService`)
+- `authService.login()` gerçek backend'e bağlandı
+- `authService.getCurrentUser()` gerçek backend'e bağlandı (token ile otomatik kullanıcı doğrulama)
+- `authService.logout()` token silme işlevi eklendi
+- Kayıt sonrası token otomatik saklanıyor
+
+**Güvenlik:**
+- JWT token'lar 30 gün geçerli
+- Şifreler bcrypt ile hash'leniyor
+- Protected route'lar auth middleware ile korunuyor
+
+## Aşama 7: Register Düzenlemeleri ve User Update Endpoint'i
+
+**Register İyileştirmeleri:**
+- Yaş kontrolü 18'den 17'ye düşürüldü
+- Özel DatePicker component'i oluşturuldu (yıl-ay-gün seçimi, Türkçe ay isimleri, dinamik gün sayısı)
+- Kayıt sonrası ana sayfaya otomatik yönlendirme eklendi
+
+**User Update Endpoint:**
+- `PUT /api/users/me` endpoint'i oluşturuldu (korumalı)
+- Partial update desteği (sadece gönderilen alanlar güncellenir)
+- Güncellenebilir alanlar: firstName, lastName, university, department, bio, profilePhoto, sports, skillLevel
+- Frontend'de `authService.updateUser()` gerçek implementasyon yapıldı
+- Profil düzenleme sayfası entegre edildi
+
+## Aşama 8: Register ve Profil Düzenleme İyileştirmeleri
+
+**Register Akışı:**
+- Türkçe karakter desteği eklendi (ı, İ, Ğ, Ü, Ş, Ö, Ç, I)
+- Doğum yılı limiti 1960'a ayarlandı (maksimum)
+- Üniversite seçimi zorunlu hale getirildi (yeni adım: `UNIVERSITY_INFO`)
+- Bölüm seçimi isteğe bağlı
+- Kayıt adımları: E-posta → Kod → Şifre → Kişisel Bilgiler → **Üniversite Bilgileri** → Profil Fotoğrafı → Biyografi
+- Biyografi adımında profil güncelleme hakkında bilgilendirme mesajı eklendi
+
+**Profil Düzenleme:**
+- Tüm alanlar isteğe bağlı (bio/department zorunluluğu kaldırıldı)
+- Kullanıcı istediği alanları doldurabilir veya boş bırakabilir
+
+## Aşama 9: Türkçe Karakter Desteği Genişletildi
+
+- İsim ve soyisim validasyonunda eksik Türkçe karakterler eklendi
+- Yeni regex: `/^[a-zA-ZğüşöçıİĞÜŞÖÇI\s]+$/`
+- Artık tüm Türkçe karakterler destekleniyor (ı, İ, I dahil)
+
+## Aşama 10: Kayıt Verilerinin Profilde Görünmesi
+
+**Sorun:** Kayıt sırasında girilen biyografi, profil fotoğrafı, üniversite ve bölüm bilgileri profilde görünmüyordu.
+
+**Çözüm:**
+- Backend'de `registerUser` fonksiyonu `bio`, `profilePhoto`, `university`, `department` alanlarını kaydediyor
+- Backend response'a tüm kullanıcı bilgileri eklendi
+- Frontend'de `authService.register()` fonksiyonu tüm alanları AuthContext'e aktarıyor
+- Swagger dokümantasyonu güncellendi
+
+**Sonuç:** Artık kayıt sırasında girilen tüm bilgiler (üniversite, bölüm, biyografi, profil fotoğrafı) profilde görünüyor.
+
+## Aşama 11: Network Hatası Çözümü (Emulator/Simulator)
+
+**Sorun:** Android emulator'de "Network request failed" hatası alınıyordu.
+
+**Neden:** Android emulator `localhost`'a erişemez, özel IP adresi gerekir.
+
+**Çözüm:**
+- `config/api.ts` dosyası oluşturuldu (platform bazlı otomatik URL seçimi)
+- Android Emulator: `http://10.0.2.2:3001/api`
+- iOS Simulator: `http://localhost:3001/api`
+- Fiziksel telefon için manuel IP ayarı desteği
+- `authService` artık `config/api.ts`'den API_URL'i import ediyor
