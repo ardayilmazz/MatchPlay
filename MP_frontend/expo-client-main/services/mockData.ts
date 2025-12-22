@@ -1,4 +1,4 @@
-import { Game, GameRequest, Notification, WaitlistEntry, University, Department, Sport, City, District, Venue, GameSkillLevel } from '@/types';
+import { Game, GameRequest, Notification, WaitlistEntry, University, Department, Sport, City, District, Venue, GameSkillLevel } from '@/types/index';
 
 export const universities: University[] = [
   { id: '1', name: 'Boğaziçi Üniversitesi', city: 'İstanbul', district: 'Bebek' },
@@ -20,18 +20,53 @@ export const skillLevels = [
 export const cities: City[] = [
   { id: '1', name: 'İstanbul' },
   { id: '2', name: 'Ankara' },
+  { id: '3', name: 'İzmir' },
 ];
+
 export const districts: District[] = [
+  // İstanbul ilçeleri
   { id: '1', cityId: '1', name: 'Kadıköy' },
   { id: '2', cityId: '1', name: 'Beşiktaş' },
+  { id: '3', cityId: '1', name: 'Şişli' },
+  { id: '4', cityId: '1', name: 'Üsküdar' },
+  { id: '5', cityId: '1', name: 'Beyoğlu' },
+  { id: '6', cityId: '1', name: 'Sarıyer' },
+  
+  // Ankara ilçeleri
+  { id: '7', cityId: '2', name: 'Çankaya' },
+  { id: '8', cityId: '2', name: 'Keçiören' },
+  { id: '9', cityId: '2', name: 'Yenimahalle' },
+  
+  // İzmir ilçeleri
+  { id: '10', cityId: '3', name: 'Bornova' },
+  { id: '11', cityId: '3', name: 'Konak' },
+  { id: '12', cityId: '3', name: 'Karşıyaka' },
 ];
+
 export const venues: Venue[] = [
-  { id: '1', name: 'Boğaziçi Spor Salonu', districtId: '6', address: 'Bebek Kampüsü', type: 'indoor' },
-  { id: '2', name: 'Bebek Sahil Basketbol Sahası', districtId: '6', address: 'Bebek Sahili', type: 'outdoor' },
-  // Kadıköy için mekanlar
-  { id: '3', name: 'Kadıköy Moda Halı Saha', districtId: '1', address: 'Moda Sahili', type: 'outdoor' },
-  { id: '4', name: 'Red Kafe', districtId: '1', address: 'Moda Caddesi No: 45', type: 'indoor' },
-  { id: '5', name: 'Kadıköy Spor Salonu', districtId: '1', address: 'Bahariye Caddesi', type: 'indoor' },
+  // Kadıköy mekanları
+  { id: '1', name: 'Kadıköy Moda Halı Saha', districtId: '1', address: 'Moda Sahili', type: 'outdoor' },
+  { id: '2', name: 'Red Kafe', districtId: '1', address: 'Moda Caddesi No: 45', type: 'indoor' },
+  { id: '3', name: 'Kadıköy Spor Salonu', districtId: '1', address: 'Bahariye Caddesi', type: 'indoor' },
+  { id: '4', name: 'Fenerbahçe Parkı', districtId: '1', address: 'Fenerbahçe', type: 'outdoor' },
+  
+  // Beşiktaş mekanları
+  { id: '5', name: 'Beşiktaş Sahil Spor Alanı', districtId: '2', address: 'Barbaros Bulvarı', type: 'outdoor' },
+  { id: '6', name: 'Abbasağa Parkı', districtId: '2', address: 'Abbasağa Parkı', type: 'outdoor' },
+  
+  // Sarıyer mekanları
+  { id: '7', name: 'Boğaziçi Spor Salonu', districtId: '6', address: 'Bebek Kampüsü', type: 'indoor' },
+  { id: '8', name: 'Bebek Sahil Basketbol Sahası', districtId: '6', address: 'Bebek Sahili', type: 'outdoor' },
+  
+  // Şişli mekanları
+  { id: '9', name: 'Şişli Spor Kompleksi', districtId: '3', address: 'Mecidiyeköy', type: 'indoor' },
+  
+  // Üsküdar mekanları
+  { id: '10', name: 'Üsküdar Spor Salonu', districtId: '4', address: 'Altunizade', type: 'indoor' },
+  
+  // Çankaya mekanları
+  { id: '11', name: 'ODTÜ Spor Salonu', districtId: '7', address: 'ODTÜ Kampüsü', type: 'indoor' },
+  { id: '12', name: 'Kuğulu Park', districtId: '7', address: 'Tunalı Hilmi', type: 'outdoor' },
 ];
 export const gameSkillLevels: { value: GameSkillLevel; label: string }[] = [
   { value: 'everyone', label: 'Herkes Katılabilir' },

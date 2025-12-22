@@ -12,6 +12,7 @@ export interface User {
   averageRating?: number;
   totalGames?: number;
   createdAt: string;
+  token?: string; // JWT token (giriş yapınca eklenir)
 }
 
 export interface University {

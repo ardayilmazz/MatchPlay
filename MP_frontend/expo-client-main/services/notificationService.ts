@@ -1,32 +1,34 @@
-import { Notification } from '@/types';
-import { mockNotifications } from './mockData'; // We'll create this file later
+import { Notification } from '@/types/index';
+
+// NOT: Notification API'si henüz backend'de yok
+// Bu özellik gelecekte eklenecek
 
 export const notificationService = {
   getUserNotifications: async (userId: string): Promise<Notification[]> => {
-    console.log(`Fetching notifications for user ${userId}`);
-    // TODO: Implement notification fetching with the new backend
-    return mockNotifications;
+    console.log(`[notificationService] Bildirimler getiriliyor - userId: ${userId}`);
+    // TODO: Backend API eklenecek
+    return [];
   },
 
   getUnreadCount: async (userId: string): Promise<number> => {
-    console.log(`Fetching unread notification count for user ${userId}`);
-    // TODO: Implement unread count fetching with the new backend
-    return mockNotifications.filter(n => !n.read).length;
+    console.log(`[notificationService] Okunmamış bildirim sayısı getiriliyor - userId: ${userId}`);
+    // TODO: Backend API eklenecek
+    return 0;
   },
 
   markAsRead: async (notificationId: string): Promise<void> => {
-    console.log(`Marking notification ${notificationId} as read`);
-    // TODO: Implement marking notification as read with the new backend
+    console.log(`[notificationService] Bildirim okundu işaretleniyor - notificationId: ${notificationId}`);
+    // TODO: Backend API eklenecek
   },
 
   markAllAsRead: async (userId: string): Promise<void> => {
-    console.log(`Marking all notifications as read for user ${userId}`);
-    // TODO: Implement marking all notifications as read with the new backend
+    console.log(`[notificationService] Tüm bildirimler okundu işaretleniyor - userId: ${userId}`);
+    // TODO: Backend API eklenecek
   },
 
   deleteNotification: async (notificationId: string): Promise<void> => {
-    console.log(`Deleting notification ${notificationId}`);
-    // TODO: Implement deleting notification with the new backend
+    console.log(`[notificationService] Bildirim siliniyor - notificationId: ${notificationId}`);
+    // TODO: Backend API eklenecek
   },
 
   createNotification: async (
@@ -36,12 +38,12 @@ export const notificationService = {
     message: string,
     data: Record<string, any> = {}
   ): Promise<Notification> => {
-    console.log('Creating notification:', { userId, type, title, message, data });
-    // TODO: Implement notification creation with the new backend
+    console.log('[notificationService] Bildirim oluşturuluyor');
+    // TODO: Backend API eklenecek
     const newNotification: Notification = {
       id: Math.random().toString(),
       userId,
-      type: 'request_received', // Using a valid NotificationType
+      type: 'request_received',
       title,
       message,
       data,

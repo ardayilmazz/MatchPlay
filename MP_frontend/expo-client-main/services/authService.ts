@@ -69,6 +69,7 @@ export const authService = {
         bio: data.bio || '',
         sports: [],
         createdAt: new Date().toISOString(),
+        token: data.token, // Token'ı user objesine ekle
       };
 
       return { success: true, user };
@@ -111,6 +112,7 @@ export const authService = {
         bio: data.bio,
         sports: data.sports || [],
         createdAt: data.createdAt || new Date().toISOString(),
+        token: data.token, // Token'ı user objesine ekle
       };
 
       return { success: true, user };
@@ -165,6 +167,7 @@ export const authService = {
         bio: data.bio,
         sports: data.sports || [],
         createdAt: data.createdAt || new Date().toISOString(),
+        token: token, // Mevcut token'ı ekle
       };
 
       return user;

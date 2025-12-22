@@ -1,73 +1,435 @@
-import { Game } from '@/types';
-import { mockGames } from './mockData'; // We'll create this file later
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config/api';
 
-interface GameFilterParams {
-  sportIds?: string[];
-  cityId?: string | null;
-  districtId?: string | null;
-  skillLevels?: string[];
-  maxDistance?: number;
-  userLocation?: { latitude: number; longitude: number };
-  dateRange?: 'today' | 'tomorrow' | 'week' | 'all';
-  onlyAvailable?: boolean;
-  instantGames?: boolean;
+const GAME_TYPES_CACHE_KEY = '@matchplay_game_types';
+const DRAFT_SESSION_KEY = '@matchplay_draft_session';
+
+export interface GameType {
+  _id: string;
+  name: string;
+  slug: string;
+  category: 'masa_tas' | 'spor' | 'beceri' | 'kart';
+  icon: string;
+  minPlayers: number;
+  maxPlayers: number;
+  hasTeams: boolean;
+  teamAssignmentOptions?: ('manual' | 'random')[];
+  requiresEquipment: boolean;
+  equipmentDescription?: string;
+  venueType: 'indoor' | 'outdoor' | 'both';
+  expectsFee: boolean;
+  defaultDuration: number;
+  isActive: boolean;
 }
 
+export interface GameSessionDraft {
+  sessionId?: string;
+  gameTypeId?: string;
+  gameType?: GameType;
+  
+  // Aşama 2: Açıklama
+  title?: string;
+  description?: string;
+  tags?: string[];
+  
+  // Aşama 3: Konum ve Zaman
+  cityId?: string;
+  cityName?: string;
+  districtId?: string;
+  districtName?: string;
+  venueId?: string;
+  venueName?: string;
+  venueAddress?: string;
+  hasFee?: boolean;
+  feeAmount?: string;
+  startDate?: Date;
+  estimatedDuration?: number;
+  
+  // Aşama 4: Ekip
+  totalPlayers?: number;
+  neededPlayers?: number;
+  teamAssignment?: 'manual' | 'random' | null;
+  teamCount?: number; // Takım sayısı
+  skillLevel?: 'ilk_defa' | 'az_bilenler' | 'orta' | 'iyi' | 'profesyonel';
+  hasEquipment?: boolean;
+  
+  // Aşama 5: Oyuncu Kriterleri
+  genderPreference?: 'herkes' | 'kizlar' | 'erkekler' | 'karma_dengeli';
+  
+  // Hangi adımda kaldı
+  currentStep?: number;
+}
+
+export interface GameSession extends GameSessionDraft {
+  _id: string;
+  creatorId: string;
+  status: 'draft' | 'open' | 'full' | 'cancelled' | 'completed';
+  currentPlayers: string[];
+  pendingRequests: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Oyun tiplerini backend'den çek ve cache'le
+export const fetchGameTypes = async (forceRefresh = false): Promise<GameType[]> => {
+  try {
+    // Cache kontrol
+    if (!forceRefresh) {
+      const cached = await AsyncStorage.getItem(GAME_TYPES_CACHE_KEY);
+      if (cached) {
+        console.log('[gameService] Oyun tipleri cache\'ten yüklendi');
+        return JSON.parse(cached);
+      }
+    }
+
+    console.log('[gameService] Oyun tipleri backend\'den çekiliyor...');
+    const response = await fetch(`${API_URL}/games/types`);
+    const data = await response.json();
+
+    if (data.success) {
+      // Cache'e kaydet
+      await AsyncStorage.setItem(GAME_TYPES_CACHE_KEY, JSON.stringify(data.data));
+      console.log(`[gameService] ${data.data.length} oyun tipi cache'lendi`);
+      return data.data;
+    }
+
+    throw new Error('Oyun tipleri getirilemedi');
+  } catch (error) {
+    console.error('[gameService] fetchGameTypes error:', error);
+    throw error;
+  }
+};
+
+// Taslağı AsyncStorage'a kaydet (veritabanına değil)
+export const saveDraftLocally = async (draft: GameSessionDraft): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DRAFT_SESSION_KEY, JSON.stringify(draft));
+    console.log('[gameService] Taslak yerel olarak kaydedildi');
+  } catch (error) {
+    console.error('[gameService] saveDraftLocally error:', error);
+    throw error;
+  }
+};
+
+// Yerel taslağı yükle
+export const loadDraftLocally = async (): Promise<GameSessionDraft | null> => {
+  try {
+    const draft = await AsyncStorage.getItem(DRAFT_SESSION_KEY);
+    if (draft) {
+      console.log('[gameService] Taslak yerel storage\'dan yüklendi');
+      return JSON.parse(draft);
+    }
+    return null;
+  } catch (error) {
+    console.error('[gameService] loadDraftLocally error:', error);
+    return null;
+  }
+};
+
+// Yerel taslağı temizle
+export const clearDraftLocally = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(DRAFT_SESSION_KEY);
+    console.log('[gameService] Yerel taslak temizlendi');
+  } catch (error) {
+    console.error('[gameService] clearDraftLocally error:', error);
+  }
+};
+
+// Oyun oturumu oluştur (son adımda backend'e gönder)
+export const createGameSession = async (
+  token: string,
+  sessionData: GameSessionDraft
+): Promise<GameSession> => {
+  try {
+    console.log('[gameService] Oyun oturumu oluşturuluyor...');
+    console.log('[gameService] gameTypeId:', sessionData.gameTypeId);
+    
+    // gameType objesini çıkar, sadece ID'yi gönder
+    const { gameType, ...dataToSend } = sessionData;
+    
+    console.log('[gameService] Gönderilecek data:', JSON.stringify(dataToSend, null, 2));
+    
+    const response = await fetch(`${API_URL}/games/sessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        ...dataToSend,
+        status: 'open', // Artık yayında
+      }),
+    });
+
+    const data = await response.json();
+    console.log('[gameService] Backend response:', data);
+
+    if (data.success) {
+      console.log('[gameService] Oyun oturumu oluşturuldu:', data.data._id);
+      // Yerel taslağı temizle
+      await clearDraftLocally();
+      return data.data;
+    }
+
+    throw new Error(data.message || 'Oyun oluşturulamadı');
+  } catch (error) {
+    console.error('[gameService] createGameSession error:', error);
+    throw error;
+  }
+};
+
+// Tüm oyun oturumlarını listele
+export const fetchGameSessions = async (filters?: {
+  city?: string;
+  district?: string;
+  gameType?: string;
+  skillLevel?: string;
+}): Promise<GameSession[]> => {
+  try {
+    const queryParams = new URLSearchParams(filters as any).toString();
+    const url = `${API_URL}/games/sessions${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success) {
+      return data.data;
+    }
+
+    throw new Error('Oyun oturumları getirilemedi');
+  } catch (error) {
+    console.error('[gameService] fetchGameSessions error:', error);
+    throw error;
+  }
+};
+
+// Tek bir oyun oturumunu getir
+export const fetchGameSession = async (id: string): Promise<GameSession> => {
+  try {
+    const response = await fetch(`${API_URL}/games/sessions/${id}`);
+    const data = await response.json();
+
+    if (data.success) {
+      return data.data;
+    }
+
+    throw new Error('Oyun oturumu bulunamadı');
+  } catch (error) {
+    console.error('[gameService] fetchGameSession error:', error);
+    throw error;
+  }
+};
+
+// Kullanıcının kendi oyunlarını getir
+export const fetchMyGameSessions = async (token: string): Promise<GameSession[]> => {
+  try {
+    const response = await fetch(`${API_URL}/games/sessions/my`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+
+    if (data.success) {
+      return data.data;
+    }
+
+    throw new Error('Oyunlar getirilemedi');
+  } catch (error) {
+    console.error('[gameService] fetchMyGameSessions error:', error);
+    throw error;
+  }
+};
+
+// Kategoriye göre oyun tiplerini grupla
+export const groupGameTypesByCategory = (gameTypes: GameType[]) => {
+  return {
+    masa_tas: gameTypes.filter((g) => g.category === 'masa_tas'),
+    spor: gameTypes.filter((g) => g.category === 'spor'),
+    beceri: gameTypes.filter((g) => g.category === 'beceri'),
+    kart: gameTypes.filter((g) => g.category === 'kart'),
+  };
+};
+
+// Kategori adlarını Türkçeleştir
+export const getCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = {
+    masa_tas: 'Masa & Taş Oyunları',
+    spor: 'Spor & Fiziksel Aktiviteler',
+    beceri: 'Beceri Oyunları',
+    kart: 'Kart Oyunları',
+  };
+  return labels[category] || category;
+};
+
+// ============================================
+// GERÇEK API İLE ÇALIŞAN GAME SERVICE
+// ============================================
+
 export const gameService = {
-  createGame: async (gameData: Omit<Game, 'id' | 'currentPlayers' | 'status' | 'createdAt'>): Promise<Game> => {
-    console.log('Creating game:', gameData);
-    // TODO: Implement game creation with the new backend
-    const newGame: Game = {
-      id: Math.random().toString(),
-      ...gameData,
-      currentPlayers: 1,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-    };
-    return newGame;
+  fetchGameSessions,
+  fetchGameSession,
+  fetchMyGameSessions,
+  // Oyunları filtrelerle getir
+  getGames: async (filters?: {
+    dateRange?: 'today' | 'tomorrow' | 'week';
+    instantGames?: boolean;
+    userLocation?: { latitude: number; longitude: number };
+    maxDistance?: number;
+  }): Promise<any[]> => {
+    try {
+      console.log('[gameService.getGames] Oyunlar çekiliyor...', filters);
+      
+      // Backend'den oyunları çek
+      const sessions = await fetchGameSessions();
+      
+      // Date filtering (frontend'de yap)
+      let filtered = sessions;
+      
+      if (filters?.dateRange) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        filtered = sessions.filter((session: any) => {
+          if (!session.startDate) return false;
+          const sessionDate = new Date(session.startDate);
+          
+          switch (filters.dateRange) {
+            case 'today':
+              return sessionDate >= today && sessionDate < tomorrow;
+            case 'tomorrow':
+              return sessionDate >= tomorrow && sessionDate < new Date(tomorrow.getTime() + 24*60*60*1000);
+            case 'week':
+              return sessionDate >= today && sessionDate < weekEnd;
+            default:
+              return true;
+          }
+        });
+      }
+      
+      // Instant games filter (2 saat içinde başlayanlar)
+      if (filters?.instantGames) {
+        const now = new Date();
+        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        
+        filtered = sessions.filter((session: any) => {
+          if (!session.startDate) return false;
+          const sessionDate = new Date(session.startDate);
+          return sessionDate >= now && sessionDate <= twoHoursLater;
+        });
+      }
+      
+      // Eski Game formatına dönüştür (UI uyumluluğu)
+      return filtered.map((session: any) => ({
+        id: session._id,
+        creatorId: session.creatorId,
+        sportId: session.gameTypeId,
+        sportName: session.gameType?.name || 'Oyun',
+        cityId: session.cityId || '',
+        cityName: session.cityName || '',
+        districtId: session.districtId || '',
+        districtName: session.districtName || '',
+        venueId: session.venueId || '',
+        venueName: session.venueName || '',
+        venueAddress: session.venueAddress || '',
+        startTime: session.startDate,
+        endTime: session.startDate,
+        totalPlayers: session.totalPlayers || 2,
+        currentPlayers: session.currentPlayers?.length || 1,
+        skillLevel: session.skillLevel || 'orta',
+        description: session.description || '',
+        status: session.status,
+        createdAt: session.createdAt,
+      }));
+    } catch (error) {
+      console.error('[gameService.getGames] Hata:', error);
+      return [];
+    }
+  },
+  
+  // Tek oyun detayı getir
+  getGameById: async (id: string): Promise<any | null> => {
+    try {
+      const session = await fetchGameSession(id);
+      
+      return {
+        id: session._id,
+        creatorId: session.creatorId,
+        sportId: session.gameTypeId,
+        sportName: session.gameType?.name || 'Oyun',
+        cityId: session.cityId || '',
+        cityName: session.cityName || '',
+        districtId: session.districtId || '',
+        districtName: session.districtName || '',
+        venueId: session.venueId || '',
+        venueName: session.venueName || '',
+        venueAddress: session.venueAddress || '',
+        startTime: session.startDate,
+        endTime: session.startDate,
+        totalPlayers: session.totalPlayers || 2,
+        currentPlayers: session.currentPlayers?.length || 1,
+        skillLevel: session.skillLevel || 'orta',
+        description: session.description || '',
+        status: session.status,
+        createdAt: session.createdAt,
+      };
+    } catch (error) {
+      console.error('[gameService.getGameById] Hata:', error);
+      return null;
+    }
   },
 
-  getGames: async (filters?: GameFilterParams): Promise<Game[]> => {
-    console.log('Fetching games with filters:', filters);
-    // TODO: Implement game fetching with the new backend
-    return mockGames;
+  // Oyun silme fonksiyonu
+  deleteGameSession: async (gameId: string, token: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Oyun silinemedi');
+      }
+    } catch (error) {
+      console.error('[gameService.deleteGameSession] Hata:', error);
+      throw error;
+    }
   },
 
-  getGameById: async (id: string): Promise<Game | null> => {
-    console.log('Fetching game by id:', id);
-    // TODO: Implement fetching game by id with the new backend
-    return mockGames.find(g => g.id === id) || null;
-  },
+  // Oyun güncelleme fonksiyonu
+  updateGameSession: async (
+    gameId: string,
+    updateData: Partial<GameSessionDraft>,
+    token: string
+  ): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
 
-  getUserGames: async (userId: string): Promise<Game[]> => {
-    console.log('Fetching games for user:', userId);
-    // TODO: Implement fetching user games with the new backend
-    return mockGames.filter(g => g.creatorId === userId);
-  },
-
-  joinGame: async (gameId: string, userId: string): Promise<Game> => {
-    console.log(`User ${userId} joining game ${gameId}`);
-    // TODO: Implement joining game with the new backend
-    const game = mockGames.find(g => g.id === gameId);
-    if (!game) throw new Error('Oyun bulunamadı');
-    return { ...game, currentPlayers: game.currentPlayers + 1 };
-  },
-
-  leaveGame: async (gameId: string, userId: string): Promise<Game> => {
-    console.log(`User ${userId} leaving game ${gameId}`);
-    // TODO: Implement leaving game with the new backend
-    const game = mockGames.find(g => g.id === gameId);
-    if (!game) throw new Error('Oyun bulunamadı');
-    return { ...game, currentPlayers: game.currentPlayers - 1 };
-  },
-
-  cancelGame: async (gameId: string, userId: string): Promise<void> => {
-    console.log(`User ${userId} canceling game ${gameId}`);
-    // TODO: Implement canceling game with the new backend
-  },
-
-  completeGame: async (gameId: string): Promise<void> => {
-    console.log(`Completing game ${gameId}`);
-    // TODO: Implement completing game with the new backend
+      if (!response.ok) {
+        throw new Error('Oyun güncellenemedi');
+      }
+    } catch (error) {
+      console.error('[gameService.updateGameSession] Hata:', error);
+      throw error;
+    }
   },
 };

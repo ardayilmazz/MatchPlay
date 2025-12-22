@@ -5,6 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
+    "android": "expo start --android",
+    "android:clear": "expo start --android --clear",
+    "android:tunnel": "expo start --android --tunnel",
     "build:web": "expo export --platform web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"

@@ -1,10 +1,12 @@
-import { WaitlistEntry, User } from '@/types';
-import { mockWaitlistEntries } from './mockData'; // We'll create this file later
+import { WaitlistEntry } from '@/types/index';
+
+// NOT: Waitlist API'si henüz backend'de yok
+// Bu özellik gelecekte eklenecek
 
 export const waitlistService = {
   addToWaitlist: async (gameId: string, userId: string): Promise<WaitlistEntry> => {
-    console.log(`Adding user ${userId} to waitlist for game ${gameId}`);
-    // TODO: Implement adding to waitlist with the new backend
+    console.log(`[waitlistService] Waitlist'e ekleniyor - gameId: ${gameId}`);
+    // TODO: Backend API eklenecek
     const newEntry: WaitlistEntry = {
       id: Math.random().toString(),
       gameId,
@@ -17,30 +19,30 @@ export const waitlistService = {
   },
 
   removeFromWaitlist: async (waitlistId: string, userId: string): Promise<void> => {
-    console.log(`User ${userId} removing from waitlist ${waitlistId}`);
-    // TODO: Implement removing from waitlist with the new backend
+    console.log(`[waitlistService] Waitlist'ten çıkarılıyor - waitlistId: ${waitlistId}`);
+    // TODO: Backend API eklenecek
   },
 
   getUserWaitlist: async (userId: string): Promise<WaitlistEntry[]> => {
-    console.log(`Fetching waitlist entries for user ${userId}`);
-    // TODO: Implement fetching user waitlist with the new backend
-    return mockWaitlistEntries.filter(w => w.userId === userId);
+    console.log(`[waitlistService] Kullanıcı waitlist'i getiriliyor - userId: ${userId}`);
+    // TODO: Backend API eklenecek
+    return [];
   },
 
   getGameWaitlist: async (gameId: string): Promise<WaitlistEntry[]> => {
-    console.log(`Fetching waitlist entries for game ${gameId}`);
-    // TODO: Implement fetching game waitlist with the new backend
-    return mockWaitlistEntries.filter(w => w.gameId === gameId);
+    console.log(`[waitlistService] Oyun waitlist'i getiriliyor - gameId: ${gameId}`);
+    // TODO: Backend API eklenecek
+    return [];
   },
 
   inviteNextFromWaitlist: async (gameId: string): Promise<void> => {
-    console.log(`Inviting next user from waitlist for game ${gameId}`);
-    // TODO: Implement inviting next from waitlist with the new backend
+    console.log(`[waitlistService] Waitlist'ten davet gönderiliyor - gameId: ${gameId}`);
+    // TODO: Backend API eklenecek
   },
 
   getWaitlistEntry: async (gameId: string, userId: string): Promise<WaitlistEntry | null> => {
-    console.log(`Fetching waitlist entry for game ${gameId} and user ${userId}`);
-    // TODO: Implement fetching waitlist entry with the new backend
-    return mockWaitlistEntries.find(w => w.gameId === gameId && w.userId === userId) || null;
+    console.log(`[waitlistService] Waitlist entry kontrol ediliyor - gameId: ${gameId}`);
+    // TODO: Backend API eklenecek
+    return null;
   },
 };
