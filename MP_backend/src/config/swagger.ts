@@ -247,6 +247,197 @@ const swaggerDefinition = {
           },
         },
       },
+      GameType: {
+        type: 'object',
+        properties: {
+          _id: {
+            type: 'string',
+            description: 'Oyun tipi ID',
+          },
+          name: {
+            type: 'string',
+            description: 'Oyun adı',
+          },
+          slug: {
+            type: 'string',
+            description: 'URL-friendly oyun adı',
+          },
+          category: {
+            type: 'string',
+            enum: ['masa_tas', 'spor', 'beceri', 'kart'],
+            description: 'Oyun kategorisi',
+          },
+          icon: {
+            type: 'string',
+            description: 'İkon adı',
+          },
+          minPlayers: {
+            type: 'number',
+            description: 'Minimum oyuncu sayısı',
+          },
+          maxPlayers: {
+            type: 'number',
+            description: 'Maksimum oyuncu sayısı',
+          },
+          hasTeams: {
+            type: 'boolean',
+            description: 'Takım sistemi var mı?',
+          },
+          teamAssignmentOptions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['manual', 'random'],
+            },
+            description: 'Takım atama seçenekleri',
+          },
+          requiresEquipment: {
+            type: 'boolean',
+            description: 'Ekipman gerekli mi?',
+          },
+          equipmentDescription: {
+            type: 'string',
+            description: 'Ekipman açıklaması',
+          },
+          venueType: {
+            type: 'string',
+            enum: ['indoor', 'outdoor', 'both'],
+            description: 'Mekan tipi',
+          },
+          expectsFee: {
+            type: 'boolean',
+            description: 'Ücret beklentisi var mı?',
+          },
+          defaultDuration: {
+            type: 'number',
+            description: 'Varsayılan oyun süresi (dakika)',
+          },
+          isActive: {
+            type: 'boolean',
+            description: 'Aktif mi?',
+          },
+        },
+      },
+      GameSession: {
+        type: 'object',
+        properties: {
+          _id: {
+            type: 'string',
+            description: 'Oyun oturumu ID',
+          },
+          creatorId: {
+            type: 'string',
+            description: 'Oluşturan kullanıcı ID',
+          },
+          gameTypeId: {
+            type: 'string',
+            description: 'Oyun tipi ID',
+          },
+          title: {
+            type: 'string',
+            description: 'Oyun başlığı',
+          },
+          description: {
+            type: 'string',
+            description: 'Oyun açıklaması',
+          },
+          tags: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Etiketler',
+          },
+          cityId: {
+            type: 'string',
+            description: 'Şehir ID',
+          },
+          cityName: {
+            type: 'string',
+            description: 'Şehir adı',
+          },
+          districtId: {
+            type: 'string',
+            description: 'İlçe ID',
+          },
+          districtName: {
+            type: 'string',
+            description: 'İlçe adı',
+          },
+          venueId: {
+            type: 'string',
+            description: 'Mekan ID',
+          },
+          venueName: {
+            type: 'string',
+            description: 'Mekan adı',
+          },
+          venueAddress: {
+            type: 'string',
+            description: 'Mekan adresi',
+          },
+          paymentType: {
+            type: 'string',
+            enum: ['alman_usulu', 'ortak', 'ismarliyorum', 'ucretsiz'],
+            description: 'Ödeme tipi',
+          },
+          startDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Başlangıç tarihi',
+          },
+          estimatedDuration: {
+            type: 'number',
+            description: 'Tahmini süre (dakika)',
+          },
+          totalPlayers: {
+            type: 'number',
+            description: 'Toplam oyuncu sayısı',
+          },
+          neededPlayers: {
+            type: 'number',
+            description: 'İhtiyaç duyulan oyuncu sayısı',
+          },
+          teamAssignment: {
+            type: 'string',
+            enum: ['manual', 'random', null],
+            description: 'Takım atama yöntemi',
+          },
+          skillLevel: {
+            type: 'string',
+            enum: ['ilk_defa', 'az_bilenler', 'orta', 'iyi', 'profesyonel'],
+            description: 'Yetenek seviyesi',
+          },
+          hasEquipment: {
+            type: 'boolean',
+            description: 'Ekipman var mı?',
+          },
+          genderPreference: {
+            type: 'string',
+            enum: ['herkes', 'kizlar', 'erkekler', 'karma_dengeli'],
+            description: 'Cinsiyet tercihi',
+          },
+          status: {
+            type: 'string',
+            enum: ['draft', 'open', 'full', 'cancelled', 'completed'],
+            description: 'Oyun durumu',
+          },
+          currentPlayers: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Mevcut oyuncular',
+          },
+          pendingRequests: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Bekleyen istekler',
+          },
+        },
+      },
     },
   },
 };

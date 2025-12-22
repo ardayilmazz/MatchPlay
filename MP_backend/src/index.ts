@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import connectDB from './config/db';
 import userRoutes from './routes/userRoutes';
+import gameRoutes from './routes/gameRoutes';
 import swaggerSpec from './config/swagger';
 
 dotenv.config();
@@ -45,6 +46,7 @@ app.use((req: Request, res: Response, next) => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/users', userRoutes);
+app.use('/api/games', gameRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Merhaba MatchPlay Backend! API dokümantasyonu için /api-docs adresini ziyaret edin.');
