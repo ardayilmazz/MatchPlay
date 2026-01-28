@@ -13,6 +13,7 @@ import {
   Clock,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { generateGameTitle } from '@/utils/gameTitle';
 
 interface NewSummaryStepProps {
   draft: GameSessionDraft;
@@ -68,13 +69,29 @@ export default function NewSummaryStep({
       erkekler: 'Sadece Erkekler',
       karma_dengeli: 'Karma (Dengeli)',
     };
-    return labels[gender || ''] || '-';
+    return labels[gender || 'herkes'] || 'Herkes Katılabilir';
   };
 
   const getFeeLabel = (hasFee?: boolean, feeAmount?: string) => {
     if (!hasFee) return 'Ücretsiz';
     if (feeAmount) return `${feeAmount} TL (Kişi başı)`;
     return 'Ücretli';
+  };
+
+  // Otomatik başlık oluştur
+  const getDisplayTitle = () => {
+    if (draft.title) return draft.title;
+    
+    // Eğer başlık yoksa ve gerekli bilgiler varsa otomatik oluştur
+    if (draft.gameType && draft.districtName && draft.startDate) {
+      return generateGameTitle(
+        draft.gameType.name,
+        draft.districtName,
+        new Date(draft.startDate)
+      );
+    }
+    
+    return '-';
   };
 
   return (
@@ -96,7 +113,7 @@ export default function NewSummaryStep({
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Başlık:</Text>
-              <Text style={styles.value}>{draft.title || '-'}</Text>
+              <Text style={styles.value}>{getDisplayTitle()}</Text>
             </View>
             {draft.description && (
               <View style={styles.row}>

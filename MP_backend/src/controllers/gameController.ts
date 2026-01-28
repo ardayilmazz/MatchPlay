@@ -321,9 +321,14 @@ export const updateGameSession = async (req: Request, res: Response) => {
     const userId = (req as any).user._id;
     const updateData = req.body;
 
-    console.log('[updateGameSession] Oyun güncelleme isteği:', { id, userId });
+    console.log('[updateGameSession] Oyun güncelleme isteği:', { 
+      id, 
+      userId, 
+      updateData: JSON.stringify(updateData) 
+    });
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log('[updateGameSession] Geçersiz ID formatı:', id);
       return res.status(400).json({
         success: false,
         message: 'Geçersiz oyun ID.',
@@ -336,6 +341,15 @@ export const updateGameSession = async (req: Request, res: Response) => {
     delete updateData.createdAt;
     delete updateData.__v;
 
+    console.log('[updateGameSession] Temizlenmiş updateData:', JSON.stringify(updateData));
+    
+    // gameType object'i varsa sadece ID'yi al
+    if (updateData.gameType && typeof updateData.gameType === 'object') {
+      console.log('[updateGameSession] gameType object algılandı, ID çıkarılıyor');
+      updateData.gameTypeId = (updateData.gameType as any)._id;
+      delete updateData.gameType;
+    }
+
     const gameSession = await GameSession.findOneAndUpdate(
       {
         _id: id,
@@ -346,13 +360,18 @@ export const updateGameSession = async (req: Request, res: Response) => {
     ).populate('gameTypeId');
 
     if (!gameSession) {
+      console.log('[updateGameSession] Oyun bulunamadı veya yetki yok:', { id, userId });
       return res.status(404).json({
         success: false,
         message: 'Oyun bulunamadı veya güncelleme yetkiniz yok.',
       });
     }
 
-    console.log('[updateGameSession] Oyun güncellendi:', gameSession._id);
+    console.log('[updateGameSession] Oyun başarıyla güncellendi:', {
+      id: gameSession._id,
+      title: gameSession.title,
+      gameType: gameSession.gameTypeId
+    });
 
     res.status(200).json({
       success: true,
@@ -360,10 +379,11 @@ export const updateGameSession = async (req: Request, res: Response) => {
       data: gameSession,
     });
   } catch (error: any) {
-    console.error('[updateGameSession] Hata:', error.message);
+    console.error('[updateGameSession] Hata:', error.message, error.stack);
     res.status(500).json({
       success: false,
       message: 'Oyun güncellenirken bir hata oluştu.',
+      error: error.message,
     });
   }
 };

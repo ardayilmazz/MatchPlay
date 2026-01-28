@@ -15,6 +15,7 @@ import Button from '@/components/Button';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { homeCacheService } from '@/utils/homeCache';
 
 export default function HomeScreen() {
   const [statistics, setStatistics] = useState<GameStatistics | null>(null);
@@ -37,27 +38,51 @@ export default function HomeScreen() {
   // const { location, error: locationError, hasPermission, requestPermission, isLoading: isLocationLoading } = useLocation();
   // ---------------------------------------------------------
 
-  const loadData = async () => {
+  const loadData = async (forceRefresh: boolean = false) => {
     try {
-      setIsLoading(true); // Yüklemeyi burada başlatalım
       setError(null);
 
-      const [stats, instant, filtered] = await Promise.all([
-        statisticsService.getHomeStatistics(/* location || undefined */), // Konum parametresini kaldır
+      // Önce cache'i kontrol et (forceRefresh değilse)
+      if (!forceRefresh) {
+        const cachedData = await homeCacheService.loadCache();
+        if (cachedData) {
+          console.log('[Home] Using cached data');
+          setStatistics(cachedData.statistics);
+          setInstantGames(cachedData.instantGames);
+          setFilteredGames(cachedData.todayGames);
+          setIsLoading(false);
+          setRefreshing(false);
+          return;
+        }
+      }
+
+      // Cache yoksa veya force refresh ise API'den çek
+      console.log('[Home] Fetching fresh data from API');
+      setIsLoading(true);
+
+      const [stats, instant, today] = await Promise.all([
+        statisticsService.getHomeStatistics(),
         gameService.getGames({
           instantGames: true,
-          // userLocation: location || undefined, // Konum parametresini kaldır
         }),
-        activeFilter ? getFilteredGames(activeFilter) : gameService.getGames({
+        gameService.getGames({
           dateRange: 'today',
-          // userLocation: location || undefined, // Konum parametresini kaldır
           maxDistance: 2,
         }),
       ]);
 
       setStatistics(stats);
       setInstantGames(instant);
-      setFilteredGames(filtered);
+      setFilteredGames(today);
+
+      // Cache'e kaydet
+      await homeCacheService.saveCache({
+        statistics: stats,
+        instantGames: instant,
+        todayGames: today,
+      });
+
+      console.log('[Home] Data cached successfully');
     } catch (err) {
       setError('Veriler yüklenirken bir hata oluştu');
       console.error('Error loading home data:', err);
@@ -108,22 +133,39 @@ export default function HomeScreen() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadData();
+    loadData(true); // Force refresh - cache'i atla
   };
 
   const handleFilterPress = async (filter: QuickFilterType) => {
-    if (activeFilter === filter) {
-      setActiveFilter(null);
-      const defaultGames = await gameService.getGames({
-        dateRange: 'today',
-        // userLocation: location || undefined, // Konum parametresini kaldır
-        maxDistance: 2,
-      });
-      setFilteredGames(defaultGames);
-    } else {
-      setActiveFilter(filter);
-      const filtered = await getFilteredGames(filter);
-      setFilteredGames(filtered);
+    try {
+      if (activeFilter === filter) {
+        setActiveFilter(null);
+        // Cache'den bugünkü oyunları yükle, yoksa API'den çek
+        const cachedData = await homeCacheService.loadCache();
+        if (cachedData && cachedData.todayGames.length > 0) {
+          setFilteredGames(cachedData.todayGames);
+        } else {
+          const defaultGames = await gameService.getGames({
+            dateRange: 'today',
+            maxDistance: 2,
+          });
+          setFilteredGames(defaultGames);
+        }
+      } else {
+        setActiveFilter(filter);
+        // Anlık oyunlar için cache kullan
+        if (filter === 'instant') {
+          const cachedData = await homeCacheService.loadCache();
+          if (cachedData && cachedData.instantGames.length > 0) {
+            setFilteredGames(cachedData.instantGames);
+            return;
+          }
+        }
+        const filtered = await getFilteredGames(filter);
+        setFilteredGames(filtered);
+      }
+    } catch (error) {
+      console.error('Error handling filter press:', error);
     }
   };
 

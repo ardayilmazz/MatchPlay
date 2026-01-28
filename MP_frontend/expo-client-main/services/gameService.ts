@@ -273,6 +273,7 @@ export const getCategoryLabel = (category: string): string => {
 // ============================================
 
 export const gameService = {
+  fetchGameTypes,
   fetchGameSessions,
   fetchGameSession,
   fetchMyGameSessions,
@@ -413,8 +414,14 @@ export const gameService = {
     gameId: string,
     updateData: Partial<GameSessionDraft>,
     token: string
-  ): Promise<void> => {
+  ): Promise<any> => {
     try {
+      console.log('[gameService.updateGameSession] İstek:', {
+        gameId,
+        updateData,
+        url: `${API_URL}/games/sessions/${gameId}`
+      });
+
       const response = await fetch(`${API_URL}/games/sessions/${gameId}`, {
         method: 'PUT',
         headers: {
@@ -424,11 +431,20 @@ export const gameService = {
         body: JSON.stringify(updateData),
       });
 
+      const responseData = await response.json();
+      console.log('[gameService.updateGameSession] Yanıt:', {
+        status: response.status,
+        ok: response.ok,
+        data: responseData
+      });
+
       if (!response.ok) {
-        throw new Error('Oyun güncellenemedi');
+        throw new Error(responseData.message || 'Oyun güncellenemedi');
       }
-    } catch (error) {
-      console.error('[gameService.updateGameSession] Hata:', error);
+
+      return responseData;
+    } catch (error: any) {
+      console.error('[gameService.updateGameSession] Hata:', error.message, error);
       throw error;
     }
   },

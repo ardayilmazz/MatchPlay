@@ -3,11 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { colors, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import StepIndicator from '@/components/create-game/StepIndicator';
-import NewGameTypeStep from '@/components/create-game/NewGameTypeStep';
-import TitleDescriptionStep from '@/components/create-game/TitleDescriptionStep';
-import LocationTimeStep from '@/components/create-game/LocationTimeStep';
-import TeamPlayersStep from '@/components/create-game/TeamPlayersStep';
-import PlayerCriteriaStep from '@/components/create-game/PlayerCriteriaStep';
+import Step1GameStep from '@/components/create-game/Step1GameStep';
+import Step2TeamStep from '@/components/create-game/Step2TeamStep';
 import NewSummaryStep from '@/components/create-game/NewSummaryStep';
 import { ChevronLeft } from 'lucide-react-native';
 import {
@@ -20,13 +17,12 @@ import {
   GameSessionDraft,
 } from '@/services/gameService';
 import { router } from 'expo-router';
+import { generateGameTitle } from '@/utils/gameTitle';
+import { homeCacheService } from '@/utils/homeCache';
 
 const STEPS = [
-  'Oyun Seç',
-  'Açıklama',
-  'Konum & Zaman',
+  'Oyun',
   'Ekip',
-  'Kriterler',
   'Özet',
 ];
 
@@ -132,6 +128,11 @@ export default function CreateScreen() {
       setIsPublishing(true);
       await createGameSession(user.token, draft);
       await clearDraftLocally();
+      
+      // Ana sayfa cache'ini temizle (yeni oyun eklendi)
+      await homeCacheService.clearCache();
+      console.log('[Create] Home cache cleared after publishing game');
+      
       Alert.alert('Başarılı!', 'Oyununuz yayınlandı', [
         {
           text: 'Tamam',
@@ -153,95 +154,117 @@ export default function CreateScreen() {
     switch (currentStep) {
       case 0:
         return (
-          <NewGameTypeStep
+          <Step1GameStep
             gameTypes={gameTypes}
-            selectedGameTypeId={draft.gameTypeId || ''}
             loading={loadingGameTypes}
-            onSelect={async (gameType) => {
-              const nextStep = currentStep + 1;
+            selectedGameType={draft.gameType || null}
+            location={draft.cityId && draft.districtId && draft.venueId ? {
+              cityId: draft.cityId,
+              cityName: draft.cityName || '',
+              districtId: draft.districtId,
+              districtName: draft.districtName || '',
+              venueId: draft.venueId,
+              venueName: draft.venueName || '',
+              venueAddress: draft.venueAddress || '',
+            } : null}
+            hasFee={draft.hasFee || false}
+            feeAmount={draft.feeAmount || ''}
+            startDate={draft.startDate ? new Date(draft.startDate) : null}
+            estimatedDuration={draft.estimatedDuration || 60}
+            title={draft.title || ''}
+            description={draft.description || ''}
+            tags={draft.tags || []}
+            onGameTypeSelect={async (gameType) => {
               await updateDraft({
                 gameTypeId: gameType._id,
                 gameType: gameType,
-                // Varsayılan değerleri ayarla
                 totalPlayers: gameType.minPlayers,
                 neededPlayers: gameType.minPlayers - 1,
                 estimatedDuration: gameType.defaultDuration,
                 teamAssignment: gameType.hasTeams ? 'manual' : null,
                 hasEquipment: false,
-                currentStep: nextStep,
               });
+            }}
+            onLocationSelect={async (location) => {
+              await updateDraft({
+                cityId: location.cityId,
+                cityName: location.cityName,
+                districtId: location.districtId,
+                districtName: location.districtName,
+                venueId: location.venueId,
+                venueName: location.venueName,
+                venueAddress: location.venueAddress,
+              });
+            }}
+            onFeeUpdate={async (data) => {
+              await updateDraft(data);
+            }}
+            onDateTimeUpdate={async (data) => {
+              await updateDraft(data);
+            }}
+            onDurationUpdate={async (data) => {
+              await updateDraft(data);
+            }}
+            onTitleDescriptionUpdate={async (data) => {
+              await updateDraft(data);
+            }}
+            onNext={async () => {
+              // Eğer başlık yoksa otomatik oluştur
+              if (!draft.title && draft.gameType && draft.districtName && draft.startDate) {
+                const autoTitle = generateGameTitle(
+                  draft.gameType.name,
+                  draft.districtName,
+                  new Date(draft.startDate)
+                );
+                await updateDraft({ title: autoTitle });
+              }
+              
+              const nextStep = currentStep + 1;
+              await updateDraft({ currentStep: nextStep });
               setCurrentStep(nextStep);
             }}
           />
         );
 
       case 1:
+        if (!draft.gameType) {
+          goToStep(0);
+          return null;
+        }
         return (
-          <TitleDescriptionStep
-            title={draft.title || ''}
-            description={draft.description || ''}
-            tags={draft.tags || []}
-            onNext={async (title, description, tags) => {
+          <Step2TeamStep
+            totalPlayers={draft.totalPlayers || draft.gameType.minPlayers}
+            neededPlayers={draft.neededPlayers || draft.gameType.minPlayers - 1}
+            skillLevel={draft.skillLevel || 'orta'}
+            genderPreference={draft.genderPreference || 'herkes'}
+            onPlayersUpdate={async (data) => {
+              await updateDraft(data);
+            }}
+            onSkillLevelUpdate={async (skillLevel) => {
+              await updateDraft({ skillLevel });
+            }}
+            onGenderUpdate={async (genderPreference) => {
+              await updateDraft({ genderPreference });
+            }}
+            onNext={async () => {
+              // Eğer başlık yoksa otomatik oluştur
+              if (!draft.title && draft.gameType && draft.districtName && draft.startDate) {
+                const autoTitle = generateGameTitle(
+                  draft.gameType.name,
+                  draft.districtName,
+                  new Date(draft.startDate)
+                );
+                await updateDraft({ title: autoTitle });
+              }
+              
               const nextStep = currentStep + 1;
-              await updateDraft({ title, description, tags, currentStep: nextStep });
+              await updateDraft({ currentStep: nextStep });
               setCurrentStep(nextStep);
             }}
           />
         );
 
       case 2:
-        return (
-          <LocationTimeStep
-            cityId={draft.cityId || ''}
-            districtId={draft.districtId || ''}
-            venueId={draft.venueId || ''}
-            hasFee={draft.hasFee || false}
-            feeAmount={draft.feeAmount || ''}
-            startDate={draft.startDate ? new Date(draft.startDate) : null}
-            estimatedDuration={draft.estimatedDuration || 60}
-            expectsFee={draft.gameType?.expectsFee || false}
-            onNext={async (data) => {
-              const nextStep = currentStep + 1;
-              await updateDraft({ ...data, currentStep: nextStep });
-              setCurrentStep(nextStep);
-            }}
-          />
-        );
-
-      case 3:
-        if (!draft.gameType) {
-          goToStep(0);
-          return null;
-        }
-        return (
-          <TeamPlayersStep
-            gameType={draft.gameType}
-            totalPlayers={draft.totalPlayers || draft.gameType.minPlayers}
-            neededPlayers={draft.neededPlayers || draft.gameType.minPlayers - 1}
-            teamAssignment={draft.teamAssignment || null}
-            skillLevel={draft.skillLevel || 'orta'}
-            hasEquipment={draft.hasEquipment || false}
-            onNext={async (data) => {
-              const nextStep = currentStep + 1;
-              await updateDraft({ ...data, currentStep: nextStep });
-              setCurrentStep(nextStep);
-            }}
-          />
-        );
-
-      case 4:
-        return (
-          <PlayerCriteriaStep
-            genderPreference={draft.genderPreference || 'herkes'}
-            onNext={async (genderPreference) => {
-              const nextStep = currentStep + 1;
-              await updateDraft({ genderPreference, currentStep: nextStep });
-              setCurrentStep(nextStep);
-            }}
-          />
-        );
-
-      case 5:
         return (
           <NewSummaryStep
             draft={draft}

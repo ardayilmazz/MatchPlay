@@ -23,6 +23,7 @@ import {
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { gameService, GameSessionDraft } from '@/services/gameService';
 import { useAuth } from '@/contexts/AuthContext';
+import { homeCacheService } from '@/utils/homeCache';
 
 export default function MyGamesScreen() {
   const [games, setGames] = useState<any[]>([]);
@@ -67,6 +68,11 @@ export default function MyGamesScreen() {
               if (!user?.token) return;
               await gameService.deleteGameSession(gameId, user.token);
               await loadGames();
+              
+              // Ana sayfa cache'ini temizle (oyun silindi)
+              await homeCacheService.clearCache();
+              console.log('[MyGames] Home cache cleared after deleting game');
+              
               Alert.alert('Başarılı', 'Oyun iptal edildi');
             } catch (error) {
               console.error('Oyun silinirken hata:', error);

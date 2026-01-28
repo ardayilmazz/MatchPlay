@@ -114,3 +114,8 @@ npx expo start
 Sorun devam ederse, terminal çıktısını ve hata mesajlarını kaydedin.
 
 
+
+
+
+
+
