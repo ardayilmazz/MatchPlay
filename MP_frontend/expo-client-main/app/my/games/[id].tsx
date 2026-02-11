@@ -127,8 +127,7 @@ export default function GameDetailScreen() {
 
   // Ücret güncelleme
   const handleFeeUpdate = (data: any) => {
-    const paymentType = data.hasFee && data.feeAmount ? 'alman_usulu' : 'ucretsiz';
-    updateLocalGame({ paymentType });
+    updateLocalGame({ feeAmount: data.feeAmount || 0 });
     setShowFeeModal(false);
   };
 
@@ -140,13 +139,23 @@ export default function GameDetailScreen() {
 
   // Süre güncelleme
   const handleDurationUpdate = (data: any) => {
-    updateLocalGame({ estimatedDuration: data.duration });
+    updateLocalGame({ estimatedDuration: data.estimatedDuration });
     setShowDurationModal(false);
   };
 
   // Sadece başlık güncelleme
   const handleTitleUpdate = (value: string) => {
-    updateLocalGame({ title: value });
+    // Eğer başlık boş bırakıldıysa ve gerekli bilgiler varsa otomatik başlık oluştur
+    let finalTitle = value;
+    if (!value && editedGame.gameType && editedGame.districtName && editedGame.startDate) {
+      const { generateGameTitle } = require('@/utils/gameTitle');
+      finalTitle = generateGameTitle(
+        editedGame.gameType.name,
+        editedGame.districtName,
+        new Date(editedGame.startDate)
+      );
+    }
+    updateLocalGame({ title: finalTitle });
     setShowTitleModal(false);
   };
 
@@ -225,7 +234,7 @@ export default function GameDetailScreen() {
         'venueId',
         'venueName',
         'venueAddress',
-        'paymentType',
+        'feeAmount',
         'startDate',
         'estimatedDuration',
         'totalPlayers',
@@ -315,12 +324,15 @@ export default function GameDetailScreen() {
 
   const getGenderLabel = (preference: string) => {
     const labels: Record<string, string> = {
-      female_only: 'Sadece kızlar',
-      male_only: 'Sadece erkekler',
-      balanced: 'Karma (dengeli)',
-      herkes: 'Herkes katılabilir',
+      female_only: 'Sadece Kızlar',
+      kizlar: 'Sadece Kızlar',
+      male_only: 'Sadece Erkekler',
+      erkekler: 'Sadece Erkekler',
+      balanced: 'Karma (Dengeli)',
+      karma_dengeli: 'Karma (Dengeli)',
+      herkes: 'Herkes Katılabilir',
     };
-    return labels[preference] || preference;
+    return labels[preference] || 'Herkes Katılabilir';
   };
 
   if (loading) {
@@ -403,11 +415,9 @@ export default function GameDetailScreen() {
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Oyun Ücreti</Text>
               <Text style={styles.itemValue}>
-                {!editedGame.paymentType || editedGame.paymentType === 'ucretsiz'
-                  ? 'Ücretsiz'
-                  : editedGame.paymentType === 'alman_usulu' ? 'Alman Usulü' 
-                    : editedGame.paymentType === 'ortak' ? 'Ortak Ödeme'
-                    : 'İsmarlanıyor'}
+                {editedGame.feeAmount && editedGame.feeAmount > 0
+                  ? `${editedGame.feeAmount} TL (Kişi başı)`
+                  : 'Ücretsiz'}
               </Text>
             </View>
             <Edit2 size={20} color={colors.primary[500]} />
@@ -476,18 +486,12 @@ export default function GameDetailScreen() {
               <Text style={styles.itemLabel}>Oyuncu Sayıları</Text>
               <View style={styles.playerInfo}>
                 <View style={styles.playerRow}>
-                  <Text style={styles.playerLabel}>Toplam:</Text>
+                  <Text style={styles.playerLabel}>Toplam Oyuncu Sayısı:</Text>
                   <Text style={styles.itemValue}>{editedGame.totalPlayers} kişi</Text>
                 </View>
                 <View style={styles.playerRow}>
-                  <Text style={styles.playerLabel}>İhtiyaç:</Text>
+                  <Text style={styles.playerLabel}>İhtiyaç Duyulan Oyuncu Sayısı:</Text>
                   <Text style={styles.itemValue}>{editedGame.neededPlayers || 0} kişi</Text>
-                </View>
-                <View style={styles.playerRow}>
-                  <Text style={styles.playerLabel}>Katılan:</Text>
-                  <Text style={styles.itemValue}>
-                    {editedGame.currentPlayers?.length || 0} kişi
-                  </Text>
                 </View>
               </View>
             </View>
@@ -591,8 +595,7 @@ export default function GameDetailScreen() {
         onSave={handleFeeUpdate}
         type="fee"
         initialFee={{
-          hasFee: editedGame.paymentType && editedGame.paymentType !== 'ucretsiz',
-          feeAmount: '',
+          feeAmount: editedGame.feeAmount || 0,
         }}
       />
 

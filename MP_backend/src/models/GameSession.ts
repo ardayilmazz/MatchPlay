@@ -17,7 +17,7 @@ export interface IGameSession extends Document {
   venueId?: string;
   venueName?: string;
   venueAddress?: string;
-  paymentType?: 'alman_usulu' | 'ortak' | 'ismarliyorum' | 'ucretsiz';
+  feeAmount?: number; // Oyun ücreti (TL)
   startDate?: Date;
   estimatedDuration?: number; // dakika
 
@@ -66,10 +66,7 @@ const GameSessionSchema: Schema = new Schema(
     venueId: { type: String },
     venueName: { type: String },
     venueAddress: { type: String },
-    paymentType: {
-      type: String,
-      enum: ['alman_usulu', 'ortak', 'ismarliyorum', 'ucretsiz'],
-    },
+    feeAmount: { type: Number, default: 0 }, // Oyun ücreti (TL), 0 = ücretsiz
     startDate: { type: Date },
     estimatedDuration: { type: Number }, // dakika
 

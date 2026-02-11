@@ -15,8 +15,7 @@ interface LocationData {
 interface LocationTimeMenuModalProps {
   visible: boolean;
   location: LocationData | null;
-  hasFee: boolean;
-  feeAmount: string;
+  feeAmount: number;
   startDate: Date | null;
   estimatedDuration: number;
   onClose: () => void;
@@ -29,7 +28,6 @@ interface LocationTimeMenuModalProps {
 export default function LocationTimeMenuModal({
   visible,
   location,
-  hasFee,
   feeAmount,
   startDate,
   estimatedDuration,
@@ -105,13 +103,13 @@ export default function LocationTimeMenuModal({
               </View>
               <View style={styles.menuTextContainer}>
                 <Text style={styles.menuTitle}>Oyun Ücreti</Text>
-                {feeAmount ? (
+                {feeAmount && feeAmount > 0 ? (
                   <View style={styles.selectedInfo}>
                     <Check size={14} color={colors.success[500]} />
                     <Text style={styles.selectedText}>{feeAmount} TL / kişi</Text>
                   </View>
                 ) : (
-                  <Text style={styles.menuHint}>İsteğe bağlı</Text>
+                  <Text style={styles.menuHint}>Ücretsiz</Text>
                 )}
               </View>
             </TouchableOpacity>

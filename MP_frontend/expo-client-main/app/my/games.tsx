@@ -137,7 +137,7 @@ export default function MyGamesScreen() {
         <View style={styles.infoRow}>
           <Users size={16} color={colors.text.secondary} />
           <Text style={styles.infoText}>
-            {game.currentPlayers?.length || 1}/{game.totalPlayers} kişi
+            {(game.totalPlayers || 0) - (game.neededPlayers || 0)}/{game.totalPlayers} kişi
           </Text>
         </View>
 

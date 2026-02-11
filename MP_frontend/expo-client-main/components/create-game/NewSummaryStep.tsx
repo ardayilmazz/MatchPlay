@@ -72,10 +72,9 @@ export default function NewSummaryStep({
     return labels[gender || 'herkes'] || 'Herkes Katılabilir';
   };
 
-  const getFeeLabel = (hasFee?: boolean, feeAmount?: string) => {
-    if (!hasFee) return 'Ücretsiz';
-    if (feeAmount) return `${feeAmount} TL (Kişi başı)`;
-    return 'Ücretli';
+  const getFeeLabel = (feeAmount?: number) => {
+    if (!feeAmount || feeAmount === 0) return 'Ücretsiz';
+    return `${feeAmount} TL (Kişi başı)`;
   };
 
   // Otomatik başlık oluştur
@@ -165,7 +164,7 @@ export default function NewSummaryStep({
             </View>
             <View style={styles.row}>
               <DollarSign size={16} color={colors.text.secondary} />
-              <Text style={styles.value}>{getFeeLabel(draft.hasFee, draft.feeAmount)}</Text>
+              <Text style={styles.value}>{getFeeLabel(draft.feeAmount)}</Text>
             </View>
           </View>
         </View>

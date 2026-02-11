@@ -19,7 +19,7 @@ interface LocationTimeModalProps {
   visible: boolean;
   type: 'location' | 'fee' | 'datetime' | 'duration';
   initialLocation?: LocationData | null;
-  initialFee?: { hasFee: boolean; feeAmount: string };
+  initialFee?: { feeAmount: string | number };
   initialDateTime?: Date | null;
   initialDuration?: number;
   onClose: () => void;
@@ -52,8 +52,9 @@ export default function LocationTimeModal({
   const [searching, setSearching] = useState(false);
 
   // Fee state
-  const [hasFee, setHasFee] = useState(initialFee?.hasFee || false);
-  const [feeAmount, setFeeAmount] = useState(initialFee?.feeAmount || '');
+  const [feeAmount, setFeeAmount] = useState(
+    initialFee?.feeAmount ? String(initialFee.feeAmount) : ''
+  );
 
   // DateTime state
   const [selectedDate, setSelectedDate] = useState<Date>(initialDateTime || new Date());
@@ -157,7 +158,8 @@ export default function LocationTimeModal({
       // Location data should be selected from search results
       return; // Don't save, user must select from results
     } else if (type === 'fee') {
-      onSave({ hasFee, feeAmount: hasFee ? feeAmount : '' });
+      const numericFee = feeAmount.trim() ? parseFloat(feeAmount) : 0;
+      onSave({ feeAmount: numericFee });
     } else if (type === 'datetime') {
       const finalDate = new Date(selectedDate);
       finalDate.setHours(selectedHour, 0, 0, 0);
@@ -229,17 +231,13 @@ export default function LocationTimeModal({
             <TextInput
               style={styles.feeInput}
               value={feeAmount}
-              onChangeText={(text) => {
-                setFeeAmount(text);
-                // Eğer değer varsa hasFee true, yoksa false
-                setHasFee(text.trim() !== '');
-              }}
-              placeholder="Örn: 100"
+              onChangeText={setFeeAmount}
+              placeholder="Örn: 100 (Boş = Ücretsiz)"
               placeholderTextColor={colors.text.tertiary}
               keyboardType="numeric"
             />
             <Text style={styles.feeHint}>
-              Boş bırakırsanız ücretsiz olarak işaretlenecek
+              Oyun başına kişi başı ücret girin. Boş bırakırsanız oyun ücretsiz olur.
             </Text>
 
             <Button title="Kaydet" onPress={handleSave} style={styles.saveButton} />

@@ -40,8 +40,7 @@ export interface GameSessionDraft {
   venueId?: string;
   venueName?: string;
   venueAddress?: string;
-  hasFee?: boolean;
-  feeAmount?: string;
+  feeAmount?: number;
   startDate?: Date;
   estimatedDuration?: number;
   
@@ -279,59 +278,83 @@ export const gameService = {
   fetchMyGameSessions,
   // Oyunları filtrelerle getir
   getGames: async (filters?: {
-    dateRange?: 'today' | 'tomorrow' | 'week';
-    instantGames?: boolean;
-    userLocation?: { latitude: number; longitude: number };
-    maxDistance?: number;
+    nameSearch?: string;
+    gameTypeIds?: string[];
+    cityId?: string | null;
+    districtId?: string | null;
+    startDateFrom?: Date | null;
+    startDateTo?: Date | null;
+    availableOnly?: boolean;
+    genderPreferences?: string[];
+    skillLevels?: string[];
+    feeType?: 'all' | 'free' | 'paid';
   }): Promise<any[]> => {
     try {
       console.log('[gameService.getGames] Oyunlar çekiliyor...', filters);
       
-      // Backend'den oyunları çek
-      const sessions = await fetchGameSessions();
+      // Backend parametrelerini hazırla
+      const params = new URLSearchParams();
       
-      // Date filtering (frontend'de yap)
-      let filtered = sessions;
-      
-      if (filters?.dateRange) {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const weekEnd = new Date(today);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-        
-        filtered = sessions.filter((session: any) => {
-          if (!session.startDate) return false;
-          const sessionDate = new Date(session.startDate);
-          
-          switch (filters.dateRange) {
-            case 'today':
-              return sessionDate >= today && sessionDate < tomorrow;
-            case 'tomorrow':
-              return sessionDate >= tomorrow && sessionDate < new Date(tomorrow.getTime() + 24*60*60*1000);
-            case 'week':
-              return sessionDate >= today && sessionDate < weekEnd;
-            default:
-              return true;
-          }
-        });
+      // İsim arama
+      if (filters?.nameSearch && filters.nameSearch.trim()) {
+        params.append('nameSearch', filters.nameSearch.trim());
       }
       
-      // Instant games filter (2 saat içinde başlayanlar)
-      if (filters?.instantGames) {
-        const now = new Date();
-        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        
-        filtered = sessions.filter((session: any) => {
-          if (!session.startDate) return false;
-          const sessionDate = new Date(session.startDate);
-          return sessionDate >= now && sessionDate <= twoHoursLater;
-        });
+      // Oyun tipleri (çoklu)
+      if (filters?.gameTypeIds && filters.gameTypeIds.length > 0) {
+        filters.gameTypeIds.forEach(id => params.append('gameType', id));
       }
+      
+      // Konum
+      if (filters?.cityId) {
+        params.append('city', filters.cityId);
+      }
+      if (filters?.districtId) {
+        params.append('district', filters.districtId);
+      }
+      
+      // Tarih aralığı
+      if (filters?.startDateFrom) {
+        params.append('startDateFrom', filters.startDateFrom.toISOString());
+      }
+      if (filters?.startDateTo) {
+        params.append('startDateTo', filters.startDateTo.toISOString());
+      }
+      
+      // Sadece yer olan oyunlar
+      if (filters?.availableOnly) {
+        params.append('availableOnly', 'true');
+      }
+      
+      // Cinsiyet tercihi (çoklu)
+      if (filters?.genderPreferences && filters.genderPreferences.length > 0) {
+        filters.genderPreferences.forEach(pref => params.append('genderPreference', pref));
+      }
+      
+      // Yetenek seviyeleri (çoklu)
+      if (filters?.skillLevels && filters.skillLevels.length > 0) {
+        filters.skillLevels.forEach(level => params.append('skillLevel', level));
+      }
+      
+      // Ücret tipi
+      if (filters?.feeType && filters.feeType !== 'all') {
+        params.append('feeType', filters.feeType);
+      }
+      
+      const url = `${API_URL}/games/sessions${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('[gameService.getGames] URL:', url);
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error('Oyunlar getirilemedi');
+      }
+      
+      const sessions = data.data;
       
       // Eski Game formatına dönüştür (UI uyumluluğu)
-      return filtered.map((session: any) => ({
+      return sessions.map((session: any) => ({
         id: session._id,
         creatorId: session.creatorId,
         sportId: session.gameTypeId,

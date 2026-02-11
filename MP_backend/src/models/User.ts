@@ -13,6 +13,7 @@ export interface IUser extends Document {
   sports?: string[];
   skillLevel?: string;
   birthDate?: Date;
+  gender?: 'male' | 'female' | 'other';
   isProfileCompleted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -32,6 +33,11 @@ const UserSchema: Schema = new Schema({
   birthDate: {
     type: Date,
     required: false, // Şimdilik zorunlu değil, register fonksiyonu dolduracak
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other'],
+    required: false,
   },
   isProfileCompleted: {
     type: Boolean,

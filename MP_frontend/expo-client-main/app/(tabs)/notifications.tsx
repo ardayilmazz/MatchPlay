@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import {
@@ -11,10 +11,10 @@ import {
   Check,
 } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
-import { Notification, NotificationType } from '@/types';
-import { notificationService } from '@/services/notificationService';
+import { notificationService, Notification } from '@/services/notificationService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
+import JoinRequestModal from '@/components/JoinRequestModal';
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -30,10 +31,10 @@ export default function NotificationsScreen() {
   }, [user]);
 
   const loadNotifications = async () => {
-    if (!user) return;
+    if (!user?.token) return;
 
     try {
-      const data = await notificationService.getUserNotifications(user.id);
+      const data = await notificationService.getNotifications(user.token);
       setNotifications(data);
     } catch (error) {
       console.error('Error loading notifications:', error);
@@ -49,10 +50,12 @@ export default function NotificationsScreen() {
   };
 
   const handleMarkAsRead = async (notificationId: string) => {
+    if (!user?.token) return;
+
     try {
-      await notificationService.markAsRead(notificationId);
+      await notificationService.markAsRead(notificationId, user.token);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+        prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
       );
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -60,68 +63,77 @@ export default function NotificationsScreen() {
   };
 
   const handleMarkAllAsRead = async () => {
-    if (!user) return;
+    if (!user?.token) return;
 
     try {
-      await notificationService.markAllAsRead(user.id);
+      // Tüm okunmamışları tek tek işaretle
+      const unreadNotifications = notifications.filter((n) => !n.read);
+      await Promise.all(
+        unreadNotifications.map((n) => notificationService.markAsRead(n._id, user.token!))
+      );
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
   };
 
-  const handleDeleteNotification = async (notificationId: string) => {
-    try {
-      await notificationService.deleteNotification(notificationId);
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  };
-
   const handleNotificationPress = async (notification: Notification) => {
     if (!notification.read) {
-      await handleMarkAsRead(notification.id);
+      await handleMarkAsRead(notification._id);
     }
 
-    if (notification.data.game_id) {
-      router.push(`/game/${notification.data.game_id}` as any);
+    // Katılma isteği bildirimi ise modal aç
+    if (notification.type === 'join_request_received' && notification.data.requestId) {
+      setSelectedRequestId(notification.data.requestId);
+    } 
+    // Diğer bildirimler için oyun detayına git
+    else if (notification.data.gameSessionId) {
+      router.push(`/game/${notification.data.gameSessionId}` as any);
     }
   };
 
-  const getNotificationIcon = (type: NotificationType) => {
+  const handleRequestModalClose = () => {
+    setSelectedRequestId(null);
+    loadNotifications(); // Bildirimleri yenile
+  };
+
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'request_received':
+      case 'join_request_received':
         return <UserPlus size={20} color={colors.primary[500]} />;
-      case 'request_accepted':
+      case 'join_request_accepted':
         return <CheckCircle2 size={20} color={colors.success[500]} />;
-      case 'request_rejected':
+      case 'join_request_rejected':
         return <XCircle size={20} color={colors.error[500]} />;
-      case 'waitlist_invite':
-        return <Bell size={20} color={colors.secondary[500]} />;
       case 'game_cancelled':
         return <XCircle size={20} color={colors.error[500]} />;
+      case 'game_full':
+        return <Bell size={20} color={colors.secondary[500]} />;
       case 'game_reminder':
         return <Calendar size={20} color={colors.secondary[500]} />;
+      case 'player_left':
+        return <XCircle size={20} color={colors.warning[500]} />;
       default:
         return <Bell size={20} color={colors.neutral[500]} />;
     }
   };
 
-  const getNotificationColor = (type: NotificationType) => {
+  const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'request_received':
+      case 'join_request_received':
         return colors.primary[100];
-      case 'request_accepted':
+      case 'join_request_accepted':
         return colors.success[100];
-      case 'request_rejected':
+      case 'join_request_rejected':
         return colors.error[100];
-      case 'waitlist_invite':
-        return colors.secondary[100];
       case 'game_cancelled':
         return colors.error[100];
+      case 'game_full':
+        return colors.secondary[100];
       case 'game_reminder':
         return colors.secondary[100];
+      case 'player_left':
+        return colors.warning[100];
       default:
         return colors.neutral[100];
     }
@@ -160,14 +172,6 @@ export default function NotificationsScreen() {
         <Text style={styles.notificationMessage}>{item.message}</Text>
         <Text style={styles.notificationTime}>{formatDate(item.createdAt)}</Text>
       </View>
-
-      <Pressable
-        style={styles.deleteButton}
-        onPress={() => handleDeleteNotification(item.id)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Trash2 size={18} color={colors.text.tertiary} />
-      </Pressable>
 
       {!item.read && <View style={styles.unreadDot} />}
     </Pressable>
@@ -221,7 +225,7 @@ export default function NotificationsScreen() {
       <FlatList
         data={notifications}
         renderItem={renderNotification}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={notifications.length === 0 ? styles.emptyListContent : styles.listContent}
@@ -234,6 +238,15 @@ export default function NotificationsScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Katılma İsteği Modal */}
+      {selectedRequestId && (
+        <JoinRequestModal
+          visible={true}
+          requestId={selectedRequestId}
+          onClose={handleRequestModalClose}
+        />
+      )}
     </View>
   );
 }

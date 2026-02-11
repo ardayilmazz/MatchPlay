@@ -9,6 +9,7 @@ export interface User {
   bio?: string;
   sports: string[];
   skillLevel?: 'beginner' | 'intermediate' | 'advanced';
+  gender?: 'male' | 'female' | 'other';
   averageRating?: number;
   totalGames?: number;
   createdAt: string;

@@ -1,55 +1,89 @@
-import { Notification } from '@/types/index';
+import { API_URL } from '@/config/api';
 
-// NOT: Notification API'si henüz backend'de yok
-// Bu özellik gelecekte eklenecek
+export interface Notification {
+  _id: string;
+  userId: string;
+  type: 
+    | 'join_request_received'
+    | 'join_request_accepted'
+    | 'join_request_rejected'
+    | 'game_cancelled'
+    | 'game_full'
+    | 'game_reminder'
+    | 'player_left';
+  title: string;
+  message: string;
+  data: {
+    gameSessionId?: string;
+    requestId?: string;
+    senderId?: string;
+    [key: string]: any;
+  };
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const notificationService = {
-  getUserNotifications: async (userId: string): Promise<Notification[]> => {
-    console.log(`[notificationService] Bildirimler getiriliyor - userId: ${userId}`);
-    // TODO: Backend API eklenecek
-    return [];
+  // Kullanıcının bildirimlerini getir
+  getNotifications: async (token: string, unreadOnly?: boolean): Promise<Notification[]> => {
+    try {
+      console.log('[notificationService] Bildirimler getiriliyor');
+      
+      const url = unreadOnly
+        ? `${API_URL}/notifications?unreadOnly=true`
+        : `${API_URL}/notifications`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bildirimler getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[notificationService] getNotifications error:', error);
+      throw error;
+    }
   },
 
-  getUnreadCount: async (userId: string): Promise<number> => {
-    console.log(`[notificationService] Okunmamış bildirim sayısı getiriliyor - userId: ${userId}`);
-    // TODO: Backend API eklenecek
-    return 0;
+  // Bildirimi okundu olarak işaretle
+  markAsRead: async (notificationId: string, token: string): Promise<void> => {
+    try {
+      console.log(`[notificationService] Bildirim okundu - id: ${notificationId}`);
+      
+      const response = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bildirim güncellenemedi');
+      }
+    } catch (error: any) {
+      console.error('[notificationService] markAsRead error:', error);
+      throw error;
+    }
   },
 
-  markAsRead: async (notificationId: string): Promise<void> => {
-    console.log(`[notificationService] Bildirim okundu işaretleniyor - notificationId: ${notificationId}`);
-    // TODO: Backend API eklenecek
-  },
-
-  markAllAsRead: async (userId: string): Promise<void> => {
-    console.log(`[notificationService] Tüm bildirimler okundu işaretleniyor - userId: ${userId}`);
-    // TODO: Backend API eklenecek
-  },
-
-  deleteNotification: async (notificationId: string): Promise<void> => {
-    console.log(`[notificationService] Bildirim siliniyor - notificationId: ${notificationId}`);
-    // TODO: Backend API eklenecek
-  },
-
-  createNotification: async (
-    userId: string,
-    type: string,
-    title: string,
-    message: string,
-    data: Record<string, any> = {}
-  ): Promise<Notification> => {
-    console.log('[notificationService] Bildirim oluşturuluyor');
-    // TODO: Backend API eklenecek
-    const newNotification: Notification = {
-      id: Math.random().toString(),
-      userId,
-      type: 'request_received',
-      title,
-      message,
-      data,
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
-    return newNotification;
+  // Okunmamış bildirim sayısını getir
+  getUnreadCount: async (token: string): Promise<number> => {
+    try {
+      const notifications = await notificationService.getNotifications(token, true);
+      return notifications.length;
+    } catch (error: any) {
+      console.error('[notificationService] getUnreadCount error:', error);
+      return 0;
+    }
   },
 };

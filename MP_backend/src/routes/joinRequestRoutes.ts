@@ -1,0 +1,104 @@
+import express from 'express';
+import { protect } from '../middleware/authMiddleware';
+import {
+  sendJoinRequest,
+  acceptJoinRequest,
+  rejectJoinRequest,
+  getGameRequests,
+} from '../controllers/joinRequestController';
+
+const router = express.Router();
+
+// Tüm route'lar korumalı (giriş gerekli)
+
+/**
+ * @swagger
+ * /api/games/sessions/{id}/join:
+ *   post:
+ *     summary: Oyuna katılma isteği gönder
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: İstek gönderildi
+ *       400:
+ *         description: Hata (zaten katıldı, duplicate request, vb.)
+ */
+router.post('/sessions/:id/join', protect, sendJoinRequest);
+
+/**
+ * @swagger
+ * /api/games/sessions/{id}/requests:
+ *   get:
+ *     summary: Oyunun katılma isteklerini getir (sadece lobi kurucusu)
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: İstekler listesi
+ */
+router.get('/sessions/:id/requests', protect, getGameRequests);
+
+/**
+ * @swagger
+ * /api/games/requests/{id}/accept:
+ *   post:
+ *     summary: Katılma isteğini kabul et
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: İstek kabul edildi
+ */
+router.post('/requests/:id/accept', protect, acceptJoinRequest);
+
+/**
+ * @swagger
+ * /api/games/requests/{id}/reject:
+ *   post:
+ *     summary: Katılma isteğini reddet
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: İstek reddedildi
+ */
+router.post('/requests/:id/reject', protect, rejectJoinRequest);
+
+export default router;

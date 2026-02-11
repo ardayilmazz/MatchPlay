@@ -1,57 +1,147 @@
 import { GameRequest } from '@/types/index';
-
-// NOT: GameRequest API'si henüz backend'de yok
-// Bu özellik gelecekte eklenecek
-// Şimdilik boş veriler dönüyor
+import { API_URL } from '@/config/api';
 
 export const gameRequestService = {
-  sendJoinRequest: async (gameId: string, userId: string, message?: string): Promise<GameRequest> => {
-    console.log(`[gameRequestService] Join request gönderiliyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-    const newRequest: GameRequest = {
-      id: Math.random().toString(),
-      gameId,
-      userId,
-      message,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newRequest;
+  // Katılma isteği gönder
+  sendJoinRequest: async (gameId: string, token: string, message?: string): Promise<GameRequest> => {
+    try {
+      console.log(`[gameRequestService] Katılma isteği gönderiliyor - gameId: ${gameId}`);
+      
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: message || '' }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Katılma isteği gönderilemedi');
+      }
+
+      return {
+        id: data.data._id,
+        gameId: data.data.gameSessionId,
+        userId: data.data.userId,
+        message: data.data.message,
+        status: data.data.status,
+        createdAt: data.data.createdAt,
+        updatedAt: data.data.updatedAt,
+      };
+    } catch (error: any) {
+      console.error('[gameRequestService] sendJoinRequest error:', error);
+      throw error;
+    }
   },
 
-  acceptJoinRequest: async (requestId: string, gameId: string): Promise<GameRequest> => {
-    console.log(`[gameRequestService] Request kabul ediliyor - requestId: ${requestId}`);
-    // TODO: Backend API eklenecek
-    throw new Error('Bu özellik henüz aktif değil');
+  // Katılma isteğini kabul et (lobi sahibi)
+  acceptJoinRequest: async (requestId: string, token: string): Promise<void> => {
+    try {
+      console.log(`[gameRequestService] İstek kabul ediliyor - requestId: ${requestId}`);
+      
+      const response = await fetch(`${API_URL}/games/requests/${requestId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'İstek kabul edilemedi');
+      }
+    } catch (error: any) {
+      console.error('[gameRequestService] acceptJoinRequest error:', error);
+      throw error;
+    }
   },
 
-  rejectJoinRequest: async (requestId: string): Promise<GameRequest> => {
-    console.log(`[gameRequestService] Request reddediliyor - requestId: ${requestId}`);
-    // TODO: Backend API eklenecek
-    throw new Error('Bu özellik henüz aktif değil');
+  // Katılma isteğini reddet (lobi sahibi)
+  rejectJoinRequest: async (requestId: string, token: string): Promise<void> => {
+    try {
+      console.log(`[gameRequestService] İstek reddediliyor - requestId: ${requestId}`);
+      
+      const response = await fetch(`${API_URL}/games/requests/${requestId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'İstek reddedilemedi');
+      }
+    } catch (error: any) {
+      console.error('[gameRequestService] rejectJoinRequest error:', error);
+      throw error;
+    }
   },
 
-  cancelJoinRequest: async (requestId: string, userId: string): Promise<void> => {
-    console.log(`[gameRequestService] Request iptal ediliyor - requestId: ${requestId}`);
-    // TODO: Backend API eklenecek
+  // Oyunun katılma isteklerini getir (lobi sahibi)
+  getGameRequests: async (gameId: string, token: string): Promise<any[]> => {
+    try {
+      console.log(`[gameRequestService] Oyun istekleri getiriliyor - gameId: ${gameId}`);
+      
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}/requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'İstekler getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[gameRequestService] getGameRequests error:', error);
+      throw error;
+    }
   },
 
-  getUserRequests: async (userId: string): Promise<GameRequest[]> => {
-    console.log(`[gameRequestService] Kullanıcı requestleri getiriliyor - userId: ${userId}`);
-    // TODO: Backend API eklenecek
-    return [];
+  // Kullanıcının belirli bir oyun için isteğini kontrol et
+  getRequestForGame: async (gameId: string, token: string): Promise<GameRequest | null> => {
+    try {
+      console.log(`[gameRequestService] Oyun için istek kontrol ediliyor - gameId: ${gameId}`);
+      
+      // Backend'de bu endpoint şimdilik yok, boş döndürüyoruz
+      // Gelecekte GET /api/games/sessions/:id/my-request endpoint'i eklenebilir
+      return null;
+    } catch (error: any) {
+      console.error('[gameRequestService] getRequestForGame error:', error);
+      return null;
+    }
   },
 
-  getGameRequests: async (gameId: string): Promise<GameRequest[]> => {
-    console.log(`[gameRequestService] Oyun requestleri getiriliyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-    return [];
-  },
+  // İstek sahibinin detaylı bilgilerini getir (lobi sahibi)
+  getRequestUserDetails: async (requestId: string, token: string): Promise<any> => {
+    try {
+      console.log(`[gameRequestService] İstek sahibi bilgileri getiriliyor - requestId: ${requestId}`);
+      
+      const response = await fetch(`${API_URL}/notifications/requests/${requestId}/user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-  getRequestForGame: async (gameId: string, userId: string): Promise<GameRequest | null> => {
-    console.log(`[gameRequestService] Oyun için request kontrol ediliyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-    return null;
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Kullanıcı bilgileri getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[gameRequestService] getRequestUserDetails error:', error);
+      throw error;
+    }
   },
 };

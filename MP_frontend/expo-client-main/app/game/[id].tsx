@@ -3,7 +3,27 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, Alert
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Award, MessageCircle, UserPlus } from 'lucide-react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
-import { Game, GameRequest, WaitlistEntry, User } from '@/types';
+import type { Game, User } from '../../types';
+
+// Temporary local type definitions (until TypeScript resolves the import issue)
+interface GameRequest {
+  id: string;
+  gameId: string;
+  userId: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  message?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WaitlistEntry {
+  id: string;
+  gameId: string;
+  userId: string;
+  position: number;
+  status: 'waiting' | 'invited' | 'expired' | 'cancelled';
+  createdAt: string;
+}
 import { gameService } from '@/services/gameService';
 import { gameRequestService } from '@/services/gameRequestService';
 import { waitlistService } from '@/services/waitlistService';
@@ -47,16 +67,17 @@ export default function GameDetailsScreen() {
   };
 
   const checkUserStatus = async () => {
-    if (!user || !id) return;
+    if (!user || !id || !user.token) return;
 
     try {
-      const request = await gameRequestService.getRequestForGame(id, user.id);
+      const request = await gameRequestService.getRequestForGame(id, user.token);
       setUserRequest(request);
 
       const waitlist = await waitlistService.getWaitlistEntry(id, user.id);
       setWaitlistEntry(waitlist);
 
-      // TODO: Replace with new backend logic
+      // Kullanıcı oyuna katılmış mı kontrol et (game.currentPlayers)
+      // TODO: Backend'den currentPlayers bilgisi gelince aktif olacak
       setIsParticipant(false);
     } catch (error) {
       console.error('Error checking user status:', error);
@@ -64,11 +85,11 @@ export default function GameDetailsScreen() {
   };
 
   const handleSendRequest = async () => {
-    if (!user || !game) return;
+    if (!user || !game || !user.token) return;
 
     setActionLoading(true);
     try {
-      await gameRequestService.sendJoinRequest(game.id, user.id);
+      await gameRequestService.sendJoinRequest(game.id, user.token);
       Alert.alert('Başarılı', 'Katılım isteğiniz gönderildi');
       await checkUserStatus();
     } catch (error: any) {
@@ -94,13 +115,15 @@ export default function GameDetailsScreen() {
   };
 
   const handleCancelRequest = async () => {
-    if (!userRequest) return;
+    if (!userRequest || !user?.token) return;
 
     setActionLoading(true);
     try {
-      await gameRequestService.cancelJoinRequest(userRequest.id, user!.id);
-      Alert.alert('Başarılı', 'İsteğiniz iptal edildi');
-      await checkUserStatus();
+      // TODO: Cancel endpoint eklenecek
+      Alert.alert('Bilgi', 'İptal özelliği yakında eklenecek');
+      // await gameRequestService.cancelJoinRequest(userRequest.id, user.token);
+      // Alert.alert('Başarılı', 'İsteğiniz iptal edildi');
+      // await checkUserStatus();
     } catch (error: any) {
       Alert.alert('Hata', error.message || 'İstek iptal edilirken hata oluştu');
     } finally {

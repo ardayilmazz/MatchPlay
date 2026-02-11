@@ -167,8 +167,7 @@ export default function CreateScreen() {
               venueName: draft.venueName || '',
               venueAddress: draft.venueAddress || '',
             } : null}
-            hasFee={draft.hasFee || false}
-            feeAmount={draft.feeAmount || ''}
+            feeAmount={draft.feeAmount || 0}
             startDate={draft.startDate ? new Date(draft.startDate) : null}
             estimatedDuration={draft.estimatedDuration || 60}
             title={draft.title || ''}

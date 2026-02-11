@@ -24,8 +24,7 @@ interface Step1GameStepProps {
   loading: boolean;
   selectedGameType: GameType | null;
   location: LocationData | null;
-  hasFee: boolean;
-  feeAmount: string;
+  feeAmount: number;
   startDate: Date | null;
   estimatedDuration: number;
   title: string;
@@ -33,7 +32,7 @@ interface Step1GameStepProps {
   tags: string[];
   onGameTypeSelect: (gameType: GameType) => void;
   onLocationSelect: (location: LocationData) => void;
-  onFeeUpdate: (data: { hasFee: boolean; feeAmount: string }) => void;
+  onFeeUpdate: (data: { feeAmount: number }) => void;
   onDateTimeUpdate: (data: { startDate: Date }) => void;
   onDurationUpdate: (data: { estimatedDuration: number }) => void;
   onTitleDescriptionUpdate: (data: { title: string; description: string; tags: string[] }) => void;
@@ -45,7 +44,6 @@ export default function Step1GameStep({
   loading,
   selectedGameType,
   location,
-  hasFee,
   feeAmount,
   startDate,
   estimatedDuration,
@@ -186,7 +184,7 @@ export default function Step1GameStep({
       <LocationTimeModal
         visible={showFeeModal}
         type="fee"
-        initialFee={{ hasFee, feeAmount }}
+        initialFee={{ feeAmount }}
         onClose={() => setShowFeeModal(false)}
         onSave={onFeeUpdate}
         onBackToMenu={() => {
@@ -222,7 +220,6 @@ export default function Step1GameStep({
       <LocationTimeMenuModal
         visible={showLocationTimeMenu}
         location={location}
-        hasFee={hasFee}
         feeAmount={feeAmount}
         startDate={startDate}
         estimatedDuration={estimatedDuration}

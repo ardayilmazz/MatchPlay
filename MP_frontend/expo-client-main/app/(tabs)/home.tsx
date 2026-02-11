@@ -60,26 +60,40 @@ export default function HomeScreen() {
       console.log('[Home] Fetching fresh data from API');
       setIsLoading(true);
 
-      const [stats, instant, today] = await Promise.all([
+      // Anlık oyunlar için (2 saat içinde başlayanlar)
+      const now = new Date();
+      const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      
+      // Bugünkü oyunlar için
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(23, 59, 59, 999);
+
+      const [stats, instant, todayGames] = await Promise.all([
         statisticsService.getHomeStatistics(),
         gameService.getGames({
-          instantGames: true,
+          startDateFrom: now,
+          startDateTo: twoHoursLater,
+          availableOnly: true,
         }),
         gameService.getGames({
-          dateRange: 'today',
-          maxDistance: 2,
+          startDateFrom: today,
+          startDateTo: tomorrow,
+          availableOnly: true,
         }),
       ]);
 
       setStatistics(stats);
       setInstantGames(instant);
-      setFilteredGames(today);
+      setFilteredGames(todayGames);
 
       // Cache'e kaydet
       await homeCacheService.saveCache({
         statistics: stats,
         instantGames: instant,
-        todayGames: today,
+        todayGames: todayGames,
       });
 
       console.log('[Home] Data cached successfully');
@@ -93,30 +107,60 @@ export default function HomeScreen() {
   };
 
   const getFilteredGames = async (filter: QuickFilterType): Promise<Game[]> => {
+    const now = new Date();
+    
     switch (filter) {
-      case 'today':
+      case 'today': {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(23, 59, 59, 999);
+        
         return gameService.getGames({
-          dateRange: 'today',
-          // userLocation: location || undefined, // Konum parametresini kaldır
+          startDateFrom: today,
+          startDateTo: tomorrow,
+          availableOnly: true,
         });
-      case 'tomorrow':
+      }
+      case 'tomorrow': {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const dayAfter = new Date(tomorrow);
+        dayAfter.setDate(dayAfter.getDate() + 1);
+        dayAfter.setHours(23, 59, 59, 999);
+        
         return gameService.getGames({
-          dateRange: 'tomorrow',
-          // userLocation: location || undefined, // Konum parametresini kaldır
+          startDateFrom: tomorrow,
+          startDateTo: dayAfter,
+          availableOnly: true,
         });
-      case 'week':
+      }
+      case 'week': {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        weekEnd.setHours(23, 59, 59, 999);
+        
         return gameService.getGames({
-          dateRange: 'week',
-          // userLocation: location || undefined, // Konum parametresini kaldır
+          startDateFrom: today,
+          startDateTo: weekEnd,
+          availableOnly: true,
         });
+      }
       case 'nearby':
-         // Bu özellik geçici olarak devre dışı
+        // Bu özellik geçici olarak devre dışı (konum için lat/lng gerekli)
         return Promise.resolve([]);
-      case 'instant':
+      case 'instant': {
+        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
         return gameService.getGames({
-          instantGames: true,
-          // userLocation: location || undefined, // Konum parametresini kaldır
+          startDateFrom: now,
+          startDateTo: twoHoursLater,
+          availableOnly: true,
         });
+      }
       default:
         return [];
     }

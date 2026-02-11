@@ -4,29 +4,55 @@ import { useRouter } from 'expo-router';
 import { SlidersHorizontal, MapPin, AlertCircle } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 import { gameService } from '@/services/gameService';
-// import { useLocation } from '@/hooks/useLocation'; // Konum hook'unu devre dışı bırak
+import { useAuth } from '@/contexts/AuthContext';
 import GameCard from '@/components/GameCard';
 import GameFiltersModal, { GameFilters } from '@/components/GameFilters';
 import Button from '@/components/Button';
 import { Game } from '@/types';
 
+// Varsayılan filtreleri oluştur
+const getDefaultFilters = (userGender?: 'male' | 'female' | 'other'): GameFilters => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 2); // Bugün + yarın (2 gün)
+  tomorrow.setHours(23, 59, 59, 999);
+  
+  // Kullanıcının cinsiyetine göre cinsiyet tercihleri
+  let genderPreferences = ['herkes'];
+  if (userGender === 'male') {
+    genderPreferences = ['herkes', 'erkekler', 'karma_dengeli'];
+  } else if (userGender === 'female') {
+    genderPreferences = ['herkes', 'kizlar', 'karma_dengeli'];
+  }
+  
+  return {
+    nameSearch: '',
+    gameTypeIds: [], // Tüm oyunlar
+    cityId: null,
+    districtId: null,
+    maxDistance: 2, // 2 km
+    startDateFrom: today, // Bugün başla
+    startDateTo: tomorrow, // Yarın bitir
+    availableOnly: true, // Sadece yer olan oyunlar
+    genderPreferences: genderPreferences,
+    skillLevels: [], // Tüm seviyeler
+    feeType: 'all', // Tüm ücretler
+  };
+};
+
 export default function DiscoverScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<GameFilters>({
-    sportIds: [],
-    cityId: null,
-    districtId: null,
-    skillLevels: [],
-    maxDistance: 2,
-    dateRange: 'all',
-    onlyAvailable: false,
-    instantGames: false,
-  });
+  const [activeFilters, setActiveFilters] = useState<GameFilters>(
+    getDefaultFilters(user?.gender as any)
+  );
 
   // --- KONUM ÖZELLİĞİ GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
   const location = null;
@@ -37,15 +63,25 @@ export default function DiscoverScreen() {
 
   const loadGames = async () => {
     try {
-      setIsLoading(true); // Yüklemeyi burada başlatalım
+      setIsLoading(true);
       setError(null);
-      const filterParams = {
-        ...activeFilters,
-        // userLocation: location || undefined, // Konum parametresini kaldır
-      };
-      const fetchedGames = await gameService.getGames(filterParams);
+      
+      const fetchedGames = await gameService.getGames({
+        nameSearch: activeFilters.nameSearch,
+        gameTypeIds: activeFilters.gameTypeIds,
+        cityId: activeFilters.cityId,
+        districtId: activeFilters.districtId,
+        startDateFrom: activeFilters.startDateFrom,
+        startDateTo: activeFilters.startDateTo,
+        availableOnly: activeFilters.availableOnly,
+        genderPreferences: activeFilters.genderPreferences,
+        skillLevels: activeFilters.skillLevels,
+        feeType: activeFilters.feeType,
+      });
+      
       setGames(fetchedGames);
     } catch (err) {
+      console.error('[DiscoverScreen] Oyunlar yüklenirken hata:', err);
       setError('Oyunlar yüklenirken bir hata oluştu');
     } finally {
       setIsLoading(false);
@@ -54,9 +90,13 @@ export default function DiscoverScreen() {
   };
 
   useEffect(() => {
-    // Konum bağımlılığını kaldırıyoruz, sadece filtrelere göre çalışacak.
     loadGames();
   }, [activeFilters]);
+  
+  // Kullanıcı değiştiğinde varsayılan filtreleri güncelle
+  useEffect(() => {
+    setActiveFilters(getDefaultFilters(user?.gender as any));
+  }, [user?.gender]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -73,16 +113,30 @@ export default function DiscoverScreen() {
 
 
   const getActiveFilterCount = () => {
+    const defaults = getDefaultFilters(user?.gender as any);
     let count = 0;
-    if (activeFilters.sportIds.length > 0) count++;
+    
+    if (activeFilters.nameSearch && activeFilters.nameSearch.trim()) count++;
+    if (activeFilters.gameTypeIds.length > 0) count++;
     if (activeFilters.cityId) count++;
     if (activeFilters.districtId) count++;
     if (activeFilters.skillLevels.length > 0) count++;
-    // maxDistance filtresini saymıyoruz çünkü geçici olarak devre dışı
-    // if (activeFilters.maxDistance !== 2) count++;
-    if (activeFilters.dateRange !== 'all') count++;
-    if (activeFilters.onlyAvailable) count++;
-    if (activeFilters.instantGames) count++;
+    if (activeFilters.feeType !== 'all') count++;
+    
+    // Varsayılandan farklıysa say
+    if (activeFilters.maxDistance !== defaults.maxDistance) count++;
+    if (activeFilters.availableOnly !== defaults.availableOnly) count++;
+    
+    // Tarih filtresi varsayılandan farklıysa
+    const hasCustomDate = 
+      activeFilters.startDateFrom?.getTime() !== defaults.startDateFrom?.getTime() ||
+      activeFilters.startDateTo?.getTime() !== defaults.startDateTo?.getTime();
+    if (hasCustomDate) count++;
+    
+    // Cinsiyet tercihi varsayılandan farklıysa
+    const hasCustomGender = JSON.stringify(activeFilters.genderPreferences) !== JSON.stringify(defaults.genderPreferences);
+    if (hasCustomGender) count++;
+    
     return count;
   };
 
@@ -139,16 +193,7 @@ export default function DiscoverScreen() {
       <Button
         title="Filtreleri Sıfırla"
         onPress={() => {
-          setActiveFilters({
-            sportIds: [],
-            cityId: null,
-            districtId: null,
-            skillLevels: [],
-            maxDistance: 2,
-            dateRange: 'all',
-            onlyAvailable: false,
-            instantGames: false,
-          });
+          setActiveFilters(getDefaultFilters(user?.gender as any));
         }}
         variant="outline"
         style={styles.emptyButton}
@@ -193,7 +238,7 @@ export default function DiscoverScreen() {
         onClose={() => setFiltersVisible(false)}
         filters={activeFilters}
         onApply={handleApplyFilters}
-        hasLocationPermission={hasPermission}
+        userGender={user?.gender as any}
       />
     </View>
   );

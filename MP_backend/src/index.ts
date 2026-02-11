@@ -6,6 +6,8 @@ import connectDB from './config/db';
 import userRoutes from './routes/userRoutes';
 import gameRoutes from './routes/gameRoutes';
 import locationRoutes from './routes/locationRoutes';
+import joinRequestRoutes from './routes/joinRequestRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import swaggerSpec from './config/swagger';
 
 dotenv.config();
@@ -16,7 +18,15 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// CORS ayarları - TÜM cihazlardan ve ağlardan erişime izin ver
+app.use(cors({
+  origin: '*', // Tüm origin'lere izin ver (development için)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false, // credentials: true için origin '*' kullanılamaz
+  optionsSuccessStatus: 200
+}));
+
 app.use(express.json()); // Body parser for JSON requests
 
 // Request logging middleware
@@ -48,14 +58,21 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/games', joinRequestRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Merhaba MatchPlay Backend! API dokümantasyonu için /api-docs adresini ziyaret edin.');
 });
 
-app.listen(PORT, () => {
+// Backend'i tüm network interface'lerinde dinle (0.0.0.0)
+// Bu sayede localhost, yerel ağ IP'si ve diğer tüm interface'lerden erişilebilir
+const server = app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Backend sunucusu başlatıldı: http://localhost:${PORT}`);
+  console.log(`Yerel ağ erişimi: http://172.20.10.3:${PORT}`);
   console.log(`Swagger dokümantasyonu: http://localhost:${PORT}/api-docs`);
   console.log(`Başlangıç zamanı: ${new Date().toISOString()}`);
 });
+
+export default server;

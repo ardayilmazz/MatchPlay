@@ -45,7 +45,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
       venueId,
       venueName,
       venueAddress,
-      paymentType,
+      feeAmount,
       startDate,
       estimatedDuration,
       totalPlayers,
@@ -100,7 +100,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
           venueId,
           venueName,
           venueAddress,
-          paymentType,
+          feeAmount,
           startDate,
           estimatedDuration,
           totalPlayers,
@@ -137,7 +137,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
         venueId,
         venueName,
         venueAddress,
-        paymentType,
+        feeAmount,
         startDate,
         estimatedDuration,
         totalPlayers,
@@ -235,9 +235,21 @@ export const getMyGameSessions = async (req: Request, res: Response) => {
 // GET /api/games/sessions - Tüm açık oyunları listele
 export const getGameSessions = async (req: Request, res: Response) => {
   try {
-    console.log('[getGameSessions] Oyun oturumları isteniyor...');
+    console.log('[getGameSessions] Oyun oturumları isteniyor...', req.query);
 
-    const { city, district, gameType, skillLevel, status } = req.query;
+    const { 
+      city, 
+      district, 
+      gameType, 
+      skillLevel, 
+      status,
+      startDateFrom,
+      startDateTo,
+      feeType,
+      genderPreference,
+      nameSearch,
+      availableOnly,
+    } = req.query;
 
     const filter: any = {};
 
@@ -248,10 +260,69 @@ export const getGameSessions = async (req: Request, res: Response) => {
       filter.status = { $in: ['open', 'full'] };
     }
 
+    // Yer olan oyunlar filtresi
+    if (availableOnly === 'true') {
+      filter.status = 'open'; // Sadece açık oyunlar
+    }
+
+    // Konum filtreleri
     if (city) filter.cityId = city;
     if (district) filter.districtId = district;
-    if (gameType) filter.gameTypeId = gameType;
-    if (skillLevel) filter.skillLevel = skillLevel;
+
+    // Oyun tipi filtresi (çoklu seçim desteği)
+    if (gameType) {
+      const gameTypes = Array.isArray(gameType) ? gameType : [gameType];
+      if (gameTypes.length > 0) {
+        filter.gameTypeId = { $in: gameTypes };
+      }
+    }
+
+    // Yetenek seviyesi filtresi (çoklu seçim desteği)
+    if (skillLevel) {
+      const skillLevels = Array.isArray(skillLevel) ? skillLevel : [skillLevel];
+      if (skillLevels.length > 0) {
+        filter.skillLevel = { $in: skillLevels };
+      }
+    }
+
+    // Tarih aralığı filtresi
+    if (startDateFrom || startDateTo) {
+      filter.startDate = {};
+      if (startDateFrom) {
+        filter.startDate.$gte = new Date(startDateFrom as string);
+      }
+      if (startDateTo) {
+        filter.startDate.$lte = new Date(startDateTo as string);
+      }
+    }
+
+    // Ücret filtresi
+    if (feeType) {
+      if (feeType === 'free') {
+        filter.$or = [
+          { feeAmount: { $exists: false } },
+          { feeAmount: 0 },
+        ];
+      } else if (feeType === 'paid') {
+        filter.feeAmount = { $gt: 0 };
+      }
+      // 'all' ise filtre ekleme
+    }
+
+    // Cinsiyet tercihi filtresi
+    if (genderPreference) {
+      const preferences = Array.isArray(genderPreference) ? genderPreference : [genderPreference];
+      if (preferences.length > 0) {
+        filter.genderPreference = { $in: preferences };
+      }
+    }
+
+    // Lobi başlık araması (sadece title alanında)
+    if (nameSearch && typeof nameSearch === 'string' && nameSearch.trim()) {
+      filter.title = { $regex: nameSearch.trim(), $options: 'i' };
+    }
+
+    console.log('[getGameSessions] Filtre:', JSON.stringify(filter, null, 2));
 
     const gameSessions = await GameSession.find(filter)
       .populate('gameTypeId')

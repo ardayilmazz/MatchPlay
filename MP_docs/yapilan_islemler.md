@@ -509,7 +509,6 @@ Her dosyaya `homeCacheService` import edildi ve ilgili işlemlerde `clearCache()
 - Daha az veri kullanımı
 - Daha az pil tüketimi
 - Kısmen offline destek (cache varsa gösterebilir)
-
 **Sunucu Optimizasyonu:**
 - API çağrıları %80+ azaldı (5 dk cache süresi ile)
 - Sunucu yükü önemli ölçüde azaldı
