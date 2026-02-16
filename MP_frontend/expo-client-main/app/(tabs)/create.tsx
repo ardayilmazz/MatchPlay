@@ -133,6 +133,14 @@ export default function CreateScreen() {
       await homeCacheService.clearCache();
       console.log('[Create] Home cache cleared after publishing game');
       
+      // Draft'ı sıfırla ve başa dön
+      setDraft({
+        currentStep: 0,
+        genderPreference: 'herkes',
+        skillLevel: 'orta',
+      });
+      setCurrentStep(0);
+      
       Alert.alert('Başarılı!', 'Oyununuz yayınlandı', [
         {
           text: 'Tamam',

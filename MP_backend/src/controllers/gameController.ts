@@ -215,6 +215,7 @@ export const getMyGameSessions = async (req: Request, res: Response) => {
       status: { $in: ['draft', 'open', 'full'] },
     })
       .populate('gameTypeId')
+      .populate('acceptedPlayers', 'firstName lastName profilePhoto')
       .sort({ createdAt: -1 });
 
     console.log(`[getMyGameSessions] ${gameSessions.length} oyun bulundu`);
@@ -327,6 +328,7 @@ export const getGameSessions = async (req: Request, res: Response) => {
     const gameSessions = await GameSession.find(filter)
       .populate('gameTypeId')
       .populate('creatorId', 'firstName lastName profilePhoto')
+      .populate('acceptedPlayers', 'firstName lastName profilePhoto')
       .sort({ startDate: 1 });
 
     console.log(`[getGameSessions] ${gameSessions.length} oyun oturumu bulundu`);
@@ -361,7 +363,8 @@ export const getGameSession = async (req: Request, res: Response) => {
     const gameSession = await GameSession.findById(id)
       .populate('gameTypeId')
       .populate('creatorId', 'firstName lastName profilePhoto bio')
-      .populate('currentPlayers', 'firstName lastName profilePhoto');
+      .populate('currentPlayers', 'firstName lastName profilePhoto')
+      .populate('acceptedPlayers', 'firstName lastName profilePhoto');
 
     if (!gameSession) {
       return res.status(404).json({

@@ -5,6 +5,8 @@ import {
   acceptJoinRequest,
   rejectJoinRequest,
   getGameRequests,
+  getMyRequestForGame,
+  leaveGame,
 } from '../controllers/joinRequestController';
 
 const router = express.Router();
@@ -40,6 +42,26 @@ const router = express.Router();
  *         description: Hata (zaten katıldı, duplicate request, vb.)
  */
 router.post('/sessions/:id/join', protect, sendJoinRequest);
+
+/**
+ * @swagger
+ * /api/games/sessions/{id}/my-request:
+ *   get:
+ *     summary: Kullanıcının oyun için isteğini getir
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Kullanıcının isteği
+ */
+router.get('/sessions/:id/my-request', protect, getMyRequestForGame);
 
 /**
  * @swagger
@@ -100,5 +122,25 @@ router.post('/requests/:id/accept', protect, acceptJoinRequest);
  *         description: İstek reddedildi
  */
 router.post('/requests/:id/reject', protect, rejectJoinRequest);
+
+/**
+ * @swagger
+ * /api/games/sessions/{id}/leave:
+ *   post:
+ *     summary: Oyundan ayrıl (kabul edilmiş oyuncu)
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Oyundan ayrıldı
+ */
+router.post('/sessions/:id/leave', protect, leaveGame);
 
 export default router;

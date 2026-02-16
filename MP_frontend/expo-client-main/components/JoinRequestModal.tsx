@@ -199,7 +199,7 @@ export default function JoinRequestModal({ visible, requestId, onClose }: JoinRe
               <Button
                 title="Reddet"
                 onPress={handleReject}
-                variant="secondary"
+                variant="danger"
                 loading={actionLoading}
                 style={styles.actionButton}
               />

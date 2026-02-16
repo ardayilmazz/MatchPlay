@@ -112,9 +112,27 @@ export const gameRequestService = {
     try {
       console.log(`[gameRequestService] Oyun için istek kontrol ediliyor - gameId: ${gameId}`);
       
-      // Backend'de bu endpoint şimdilik yok, boş döndürüyoruz
-      // Gelecekte GET /api/games/sessions/:id/my-request endpoint'i eklenebilir
-      return null;
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}/my-request`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success || !data.data) {
+        return null;
+      }
+
+      return {
+        id: data.data._id,
+        gameId: data.data.gameSessionId,
+        userId: data.data.userId,
+        message: data.data.message,
+        status: data.data.status,
+        createdAt: data.data.createdAt,
+        updatedAt: data.data.updatedAt,
+      };
     } catch (error: any) {
       console.error('[gameRequestService] getRequestForGame error:', error);
       return null;
@@ -141,6 +159,29 @@ export const gameRequestService = {
       return data.data;
     } catch (error: any) {
       console.error('[gameRequestService] getRequestUserDetails error:', error);
+      throw error;
+    }
+  },
+
+  // Oyundan ayrıl (kabul edilmiş oyuncu)
+  leaveGame: async (gameId: string, token: string): Promise<void> => {
+    try {
+      console.log(`[gameRequestService] Oyundan ayrılınıyor - gameId: ${gameId}`);
+      
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Oyundan ayrılınamadı');
+      }
+    } catch (error: any) {
+      console.error('[gameRequestService] leaveGame error:', error);
       throw error;
     }
   },

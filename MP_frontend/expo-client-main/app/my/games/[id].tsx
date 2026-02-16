@@ -498,7 +498,25 @@ export default function GameDetailScreen() {
             <Edit2 size={20} color={colors.primary[500]} />
           </TouchableOpacity>
 
-          {/* 9. Yetenek Seviyesi */}
+          {/* 9. Katılan Oyuncular */}
+          {editedGame.acceptedPlayers && editedGame.acceptedPlayers.length > 0 && (
+            <View style={styles.nonEditableItem}>
+              <View style={styles.itemLeft}>
+                <Text style={styles.itemLabel}>Katılan Oyuncular ({editedGame.acceptedPlayers.length})</Text>
+                <View style={styles.playersList}>
+                  {editedGame.acceptedPlayers.map((player: any, index: number) => (
+                    <View key={player._id || index} style={styles.playerItem}>
+                      <Text style={styles.playerName}>
+                        • {player.firstName} {player.lastName}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* 10. Yetenek Seviyesi */}
           <TouchableOpacity 
             style={styles.editableItem} 
             onPress={() => setShowSkillModal(true)}
@@ -512,7 +530,7 @@ export default function GameDetailScreen() {
             <Edit2 size={20} color={colors.primary[500]} />
           </TouchableOpacity>
 
-          {/* 10. Cinsiyet Tercihi */}
+          {/* 11. Cinsiyet Tercihi */}
           <TouchableOpacity 
             style={styles.editableItem} 
             onPress={() => setShowGenderModal(true)}
@@ -725,6 +743,17 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.text.secondary,
     width: 70,
+  },
+  playersList: {
+    marginTop: spacing.xs,
+    gap: spacing.xs,
+  },
+  playerItem: {
+    paddingVertical: 2,
+  },
+  playerName: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.primary,
   },
   errorText: {
     fontSize: typography.sizes.lg,

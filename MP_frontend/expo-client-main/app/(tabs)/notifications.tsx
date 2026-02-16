@@ -77,6 +77,32 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (!user?.token) return;
+
+    Alert.alert(
+      'Tüm Bildirimleri Sil',
+      'Tüm bildirimlerinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await notificationService.deleteAllNotifications(user.token!);
+              setNotifications([]);
+              Alert.alert('Başarılı', 'Tüm bildirimler silindi');
+            } catch (error) {
+              console.error('Error deleting all notifications:', error);
+              Alert.alert('Hata', 'Bildirimler silinirken bir hata oluştu');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleNotificationPress = async (notification: Notification) => {
     if (!notification.read) {
       await handleMarkAsRead(notification._id);
@@ -201,12 +227,21 @@ export default function NotificationsScreen() {
           )}
         </View>
 
-        {unreadCount > 0 && (
-          <Pressable onPress={handleMarkAllAsRead} style={styles.markAllButton}>
-            <Check size={16} color={colors.primary[500]} />
-            <Text style={styles.markAllText}>Tümünü Okundu İşaretle</Text>
-          </Pressable>
-        )}
+        <View style={styles.headerActions}>
+          {unreadCount > 0 && (
+            <Pressable onPress={handleMarkAllAsRead} style={styles.headerActionButton}>
+              <Check size={16} color={colors.primary[500]} />
+              <Text style={styles.headerActionText}>Tümünü Okundu İşaretle</Text>
+            </Pressable>
+          )}
+          
+          {notifications.length > 0 && (
+            <Pressable onPress={handleDeleteAll} style={styles.headerActionButton}>
+              <Trash2 size={16} color={colors.error[500]} />
+              <Text style={[styles.headerActionText, { color: colors.error[500] }]}>Tümünü Sil</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     );
   };
@@ -305,12 +340,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.neutral[0],
   },
-  markAllButton: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flexWrap: 'wrap',
+  },
+  headerActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  markAllText: {
+  headerActionText: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
     color: colors.primary[500],

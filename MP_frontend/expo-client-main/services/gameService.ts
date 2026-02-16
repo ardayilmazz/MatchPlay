@@ -354,27 +354,35 @@ export const gameService = {
       const sessions = data.data;
       
       // Eski Game formatına dönüştür (UI uyumluluğu)
-      return sessions.map((session: any) => ({
-        id: session._id,
-        creatorId: session.creatorId,
-        sportId: session.gameTypeId,
-        sportName: session.gameType?.name || 'Oyun',
-        cityId: session.cityId || '',
-        cityName: session.cityName || '',
-        districtId: session.districtId || '',
-        districtName: session.districtName || '',
-        venueId: session.venueId || '',
-        venueName: session.venueName || '',
-        venueAddress: session.venueAddress || '',
-        startTime: session.startDate,
-        endTime: session.startDate,
-        totalPlayers: session.totalPlayers || 2,
-        currentPlayers: session.currentPlayers?.length || 1,
-        skillLevel: session.skillLevel || 'orta',
-        description: session.description || '',
-        status: session.status,
-        createdAt: session.createdAt,
-      }));
+      return sessions.map((session: any) => {
+        // Dinamik neededPlayers hesaplama: totalPlayers - (acceptedPlayers.length + 1 creator)
+        const acceptedPlayersCount = session.acceptedPlayers?.length || 0;
+        const dynamicNeededPlayers = Math.max(0, (session.totalPlayers || 2) - acceptedPlayersCount - 1);
+        
+        return {
+          id: session._id,
+          creatorId: session.creatorId,
+          sportId: session.gameTypeId,
+          sportName: session.gameType?.name || 'Oyun',
+          cityId: session.cityId || '',
+          cityName: session.cityName || '',
+          districtId: session.districtId || '',
+          districtName: session.districtName || '',
+          venueId: session.venueId || '',
+          venueName: session.venueName || '',
+          venueAddress: session.venueAddress || '',
+          startTime: session.startDate,
+          endTime: session.startDate,
+          totalPlayers: session.totalPlayers || 2,
+          currentPlayers: acceptedPlayersCount + 1, // acceptedPlayers + creator
+          neededPlayers: dynamicNeededPlayers,
+          acceptedPlayers: session.acceptedPlayers,
+          skillLevel: session.skillLevel || 'orta',
+          description: session.description || '',
+          status: session.status,
+          createdAt: session.createdAt,
+        };
+      });
     } catch (error) {
       console.error('[gameService.getGames] Hata:', error);
       return [];

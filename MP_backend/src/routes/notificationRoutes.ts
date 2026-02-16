@@ -3,6 +3,7 @@ import { protect } from '../middleware/authMiddleware';
 import {
   getNotifications,
   markAsRead,
+  deleteAllNotifications,
   getRequestUserDetails,
 } from '../controllers/notificationController';
 
@@ -46,6 +47,20 @@ router.get('/', protect, getNotifications);
  *         description: Bildirim güncellendi
  */
 router.put('/:id/read', protect, markAsRead);
+
+/**
+ * @swagger
+ * /api/notifications:
+ *   delete:
+ *     summary: Kullanıcının tüm bildirimlerini sil
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tüm bildirimler silindi
+ */
+router.delete('/', protect, deleteAllNotifications);
 
 /**
  * @swagger

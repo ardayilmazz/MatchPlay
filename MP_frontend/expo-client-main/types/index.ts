@@ -78,6 +78,13 @@ export interface Game {
   endTime: string;
   totalPlayers: number;
   currentPlayers: number;
+  neededPlayers: number;
+  acceptedPlayers?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePhoto?: string;
+  }>;
   skillLevel: GameSkillLevel;
   description?: string;
   status: 'open' | 'full' | 'completed' | 'cancelled';

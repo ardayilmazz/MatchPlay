@@ -86,4 +86,29 @@ export const notificationService = {
       return 0;
     }
   },
+
+  // Tüm bildirimleri sil
+  deleteAllNotifications: async (token: string): Promise<void> => {
+    try {
+      console.log('[notificationService] Tüm bildirimler siliniyor');
+      
+      const response = await fetch(`${API_URL}/notifications`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bildirimler silinemedi');
+      }
+
+      console.log(`[notificationService] ${data.deletedCount} bildirim silindi`);
+    } catch (error: any) {
+      console.error('[notificationService] deleteAllNotifications error:', error);
+      throw error;
+    }
+  },
 };

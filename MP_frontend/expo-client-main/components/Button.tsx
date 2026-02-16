@@ -5,7 +5,7 @@ import { ReactNode } from 'react';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
@@ -32,6 +32,7 @@ export default function Button({
     variant === 'primary' && styles.primaryButton,
     variant === 'secondary' && styles.secondaryButton,
     variant === 'outline' && styles.outlineButton,
+    variant === 'danger' && styles.dangerButton,
     (disabled || loading) && styles.disabledButton,
     style,
   ];
@@ -43,6 +44,7 @@ export default function Button({
     variant === 'primary' && styles.primaryText,
     variant === 'secondary' && styles.secondaryText,
     variant === 'outline' && styles.outlineText,
+    variant === 'danger' && styles.dangerText,
     (disabled || loading) && styles.disabledText,
     textStyle,
   ];
@@ -97,6 +99,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary[500],
   },
+  dangerButton: {
+    backgroundColor: colors.error[500],
+  },
   disabledButton: {
     opacity: 0.5,
   },
@@ -126,6 +131,9 @@ const styles = StyleSheet.create({
   },
   outlineText: {
     color: colors.primary[500],
+  },
+  dangerText: {
+    color: colors.text.inverse,
   },
   disabledText: {
     opacity: 0.7,

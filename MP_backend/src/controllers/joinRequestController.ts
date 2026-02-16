@@ -163,9 +163,11 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
       });
     }
 
-    // Oyunda yer var mı?
-    const currentPlayerCount = gameSession.currentPlayers.length;
-    if (currentPlayerCount >= gameSession.totalPlayers) {
+    // Oyunda yer var mı? (acceptedPlayers + creator = totalPlayers)
+    const acceptedPlayerCount = gameSession.acceptedPlayers?.length || 0;
+    const neededPlayers = gameSession.neededPlayers || 0;
+    
+    if (acceptedPlayerCount >= neededPlayers) {
       return res.status(400).json({
         success: false,
         message: 'Oyunda yer kalmadı.',
@@ -177,15 +179,22 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
     joinRequest.respondedAt = new Date();
     await joinRequest.save();
 
-    // Oyuncuyu oyuna ekle
+    // Oyuncuyu oyuna ekle (hem acceptedPlayers hem de currentPlayers - geriye dönük uyumluluk için)
     await GameSession.findByIdAndUpdate(gameSession._id, {
-      $addToSet: { currentPlayers: joinRequest.userId },
+      $addToSet: { 
+        acceptedPlayers: joinRequest.userId,
+        currentPlayers: joinRequest.userId 
+      },
     });
 
     // Oyun doldu mu kontrol et
     const updatedSession = await GameSession.findById(gameSession._id);
-    if (updatedSession && updatedSession.currentPlayers.length >= (updatedSession.totalPlayers || 0)) {
+    const totalAcceptedPlayers = (updatedSession?.acceptedPlayers?.length || 0);
+    const totalNeededPlayers = updatedSession?.neededPlayers || 0;
+    
+    if (updatedSession && totalAcceptedPlayers >= totalNeededPlayers) {
       await GameSession.findByIdAndUpdate(gameSession._id, { status: 'full' });
+      console.log('[acceptJoinRequest] Oyun doldu, status: full');
     }
 
     // İstek sahibine bildirim gönder
@@ -294,6 +303,129 @@ export const rejectJoinRequest = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'İstek reddedilirken bir hata oluştu.',
+    });
+  }
+};
+
+// POST /api/games/sessions/:id/leave - Oyundan ayrıl (kabul edilmiş oyuncu)
+export const leaveGame = async (req: Request, res: Response) => {
+  try {
+    const { id: gameSessionId } = req.params;
+    const userId = (req as any).user._id;
+
+    console.log('[leaveGame] Oyundan ayrılma:', { gameSessionId, userId });
+
+    if (!mongoose.Types.ObjectId.isValid(gameSessionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz oyun ID.',
+      });
+    }
+
+    const gameSession = await GameSession.findById(gameSessionId);
+    if (!gameSession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Oyun bulunamadı.',
+      });
+    }
+
+    // Kullanıcı oyun kurucusu mu?
+    if (gameSession.creatorId.toString() === userId.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Oyun kurucusu oyundan ayrılamaz. Oyunu iptal edebilirsiniz.',
+      });
+    }
+
+    // Kullanıcı oyunda mı?
+    const isInGame = gameSession.acceptedPlayers?.some((p) => p.toString() === userId.toString());
+    if (!isInGame) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu oyunda değilsiniz.',
+      });
+    }
+
+    // Oyuncuyu oyundan çıkar
+    await GameSession.findByIdAndUpdate(gameSessionId, {
+      $pull: { 
+        acceptedPlayers: userId,
+        currentPlayers: userId 
+      },
+    });
+
+    // Oyun durumunu güncelle (full ise open yap)
+    const updatedSession = await GameSession.findById(gameSessionId);
+    if (updatedSession && updatedSession.status === 'full') {
+      await GameSession.findByIdAndUpdate(gameSessionId, { status: 'open' });
+      console.log('[leaveGame] Oyun durumu full -> open');
+    }
+
+    // Kabul edilmiş isteği iptal et
+    await JoinRequest.findOneAndUpdate(
+      { gameSessionId, userId, status: 'accepted' },
+      { status: 'cancelled' }
+    );
+
+    // Lobi sahibine bildirim gönder
+    const user = await User.findById(userId).select('firstName lastName');
+    await Notification.create({
+      userId: gameSession.creatorId,
+      type: 'player_left',
+      title: 'Oyuncu Ayrıldı',
+      message: `${user?.firstName} ${user?.lastName} oyununuzdan ayrıldı.`,
+      data: {
+        gameSessionId: gameSessionId,
+        userId: userId.toString(),
+      },
+      read: false,
+    });
+
+    console.log('[leaveGame] Oyuncu oyundan ayrıldı:', userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Oyundan ayrıldınız.',
+    });
+  } catch (error: any) {
+    console.error('[leaveGame] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Oyundan ayrılırken bir hata oluştu.',
+    });
+  }
+};
+
+// GET /api/games/sessions/:id/my-request - Kullanıcının oyun için isteğini getir
+export const getMyRequestForGame = async (req: Request, res: Response) => {
+  try {
+    const { id: gameSessionId } = req.params;
+    const userId = (req as any).user._id;
+
+    console.log('[getMyRequestForGame] İstek sorgulanıyor:', { gameSessionId, userId });
+
+    if (!mongoose.Types.ObjectId.isValid(gameSessionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz oyun ID.',
+      });
+    }
+
+    const joinRequest = await JoinRequest.findOne({
+      gameSessionId,
+      userId,
+    }).sort({ createdAt: -1 }); // En son isteği al
+
+    res.status(200).json({
+      success: true,
+      data: joinRequest,
+    });
+  } catch (error: any) {
+    console.error('[getMyRequestForGame] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'İstek sorgulanırken bir hata oluştu.',
     });
   }
 };

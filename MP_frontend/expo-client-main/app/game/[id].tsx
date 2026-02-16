@@ -76,9 +76,11 @@ export default function GameDetailsScreen() {
       const waitlist = await waitlistService.getWaitlistEntry(id, user.id);
       setWaitlistEntry(waitlist);
 
-      // Kullanıcı oyuna katılmış mı kontrol et (game.currentPlayers)
-      // TODO: Backend'den currentPlayers bilgisi gelince aktif olacak
-      setIsParticipant(false);
+      // Kullanıcı oyuna katılmış mı kontrol et (game.acceptedPlayers)
+      if (game && game.acceptedPlayers) {
+        const isAccepted = game.acceptedPlayers.some((p) => p._id === user.id);
+        setIsParticipant(isAccepted);
+      }
     } catch (error) {
       console.error('Error checking user status:', error);
     }
@@ -129,6 +131,38 @@ export default function GameDetailsScreen() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleLeaveGame = async () => {
+    if (!game || !user?.token) return;
+
+    Alert.alert(
+      'Oyundan Ayrıl',
+      'Bu oyundan ayrılmak istediğinizden emin misiniz?',
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Ayrıl',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await gameRequestService.leaveGame(game.id, user.token!);
+              Alert.alert('Başarılı', 'Oyundan ayrıldınız', [
+                {
+                  text: 'Tamam',
+                  onPress: () => router.back(),
+                },
+              ]);
+            } catch (error: any) {
+              Alert.alert('Hata', error.message || 'Oyundan ayrılırken hata oluştu');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleRemoveFromWaitlist = async () => {
@@ -191,9 +225,12 @@ export default function GameDetailsScreen() {
 
     if (isParticipant) {
       return (
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>Oyuna Katıldınız</Text>
-        </View>
+        <Button
+          title="Buluşmadan Ayrıl"
+          onPress={handleLeaveGame}
+          variant="danger"
+          loading={actionLoading}
+        />
       );
     }
 
@@ -203,16 +240,19 @@ export default function GameDetailsScreen() {
           <Button
             title="İsteği İptal Et"
             onPress={handleCancelRequest}
-            variant="secondary"
+            variant="danger"
             loading={actionLoading}
           />
         );
       }
       if (userRequest.status === 'accepted') {
         return (
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>İsteğiniz Kabul Edildi</Text>
-          </View>
+          <Button
+            title="Buluşmadan Ayrıl"
+            onPress={handleLeaveGame}
+            variant="danger"
+            loading={actionLoading}
+          />
         );
       }
       if (userRequest.status === 'rejected') {

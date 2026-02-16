@@ -66,6 +66,31 @@ export const markAsRead = async (req: Request, res: Response) => {
   }
 };
 
+// DELETE /api/notifications - Kullanıcının tüm bildirimlerini sil
+export const deleteAllNotifications = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+
+    console.log('[deleteAllNotifications] Tüm bildirimler siliniyor:', { userId });
+
+    const result = await Notification.deleteMany({ userId });
+
+    console.log(`[deleteAllNotifications] ${result.deletedCount} bildirim silindi`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Tüm bildirimler silindi.',
+      deletedCount: result.deletedCount,
+    });
+  } catch (error: any) {
+    console.error('[deleteAllNotifications] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Bildirimler silinirken bir hata oluştu.',
+    });
+  }
+};
+
 // GET /api/games/requests/:id/user - Katılma isteği sahibinin detaylı bilgilerini getir
 export const getRequestUserDetails = async (req: Request, res: Response) => {
   try {
