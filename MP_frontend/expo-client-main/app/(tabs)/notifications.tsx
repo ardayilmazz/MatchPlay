@@ -138,7 +138,7 @@ export default function NotificationsScreen() {
       case 'game_reminder':
         return <Calendar size={20} color={colors.secondary[500]} />;
       case 'player_left':
-        return <XCircle size={20} color={colors.warning[500]} />;
+        return <XCircle size={20} color={colors.secondary[500]} />;
       default:
         return <Bell size={20} color={colors.neutral[500]} />;
     }
@@ -159,7 +159,7 @@ export default function NotificationsScreen() {
       case 'game_reminder':
         return colors.secondary[100];
       case 'player_left':
-        return colors.warning[100];
+        return colors.secondary[100];
       default:
         return colors.neutral[100];
     }

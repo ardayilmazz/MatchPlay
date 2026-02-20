@@ -362,7 +362,7 @@ export const getGameSession = async (req: Request, res: Response) => {
 
     const gameSession = await GameSession.findById(id)
       .populate('gameTypeId')
-      .populate('creatorId', 'firstName lastName profilePhoto bio')
+      .populate('creatorId', 'firstName lastName profilePhoto bio gender birthDate')
       .populate('currentPlayers', 'firstName lastName profilePhoto')
       .populate('acceptedPlayers', 'firstName lastName profilePhoto');
 

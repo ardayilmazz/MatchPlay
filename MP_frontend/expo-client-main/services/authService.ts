@@ -12,7 +12,10 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/users/send-verification-code`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ email }),
       });
       const data = await response.json();
@@ -26,7 +29,10 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/users/verify-code`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ email, code }),
       });
       const data = await response.json();
@@ -40,8 +46,9 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/users/register`, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(registerData),
       });
@@ -83,8 +90,9 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify({ email, password }),
       });

@@ -711,6 +711,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     minHeight: 70,
   },
+  nonEditableItem: {
+    backgroundColor: colors.neutral[0],
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+  },
   itemLeft: {
     flex: 1,
     marginRight: spacing.md,

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Award, MessageCircle, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Award, MessageCircle, UserPlus, User as UserIcon } from 'lucide-react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
-import type { Game, User } from '../../types';
+import type { Game, User } from '@/types';
 
 // Temporary local type definitions (until TypeScript resolves the import issue)
 interface GameRequest {
@@ -29,6 +29,7 @@ import { gameRequestService } from '@/services/gameRequestService';
 import { waitlistService } from '@/services/waitlistService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
+import CreatorProfileModal from '@/components/CreatorProfileModal';
 
 export default function GameDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,13 +42,20 @@ export default function GameDetailsScreen() {
   const [waitlistEntry, setWaitlistEntry] = useState<WaitlistEntry | null>(null);
   const [isCreator, setIsCreator] = useState(false);
   const [isParticipant, setIsParticipant] = useState(false);
+  const [showCreatorModal, setShowCreatorModal] = useState(false);
 
   useEffect(() => {
     if (id && user) {
       loadGameDetails();
-      checkUserStatus();
     }
   }, [id, user]);
+
+  // game state'i değiştiğinde kullanıcı durumunu kontrol et
+  useEffect(() => {
+    if (game && user) {
+      checkUserStatus();
+    }
+  }, [game, user]);
 
   const loadGameDetails = async () => {
     try {
@@ -67,7 +75,7 @@ export default function GameDetailsScreen() {
   };
 
   const checkUserStatus = async () => {
-    if (!user || !id || !user.token) return;
+    if (!user || !id || !user.token || !game) return;
 
     try {
       const request = await gameRequestService.getRequestForGame(id, user.token);
@@ -77,8 +85,11 @@ export default function GameDetailsScreen() {
       setWaitlistEntry(waitlist);
 
       // Kullanıcı oyuna katılmış mı kontrol et (game.acceptedPlayers)
-      if (game && game.acceptedPlayers) {
-        const isAccepted = game.acceptedPlayers.some((p) => p._id === user.id);
+      if (game && game.acceptedPlayers && Array.isArray(game.acceptedPlayers)) {
+        const isAccepted = game.acceptedPlayers.some((p: any) => {
+          const playerId = typeof p === 'object' && p._id ? p._id : p;
+          return playerId === user.id;
+        });
         setIsParticipant(isAccepted);
       }
     } catch (error) {
@@ -396,9 +407,31 @@ export default function GameDetailsScreen() {
             )}
           </View>
 
+          {/* Oyun Kurucu Bilgileri Butonu */}
+          {!isCreator && (game as any).creator && (
+            <View style={styles.creatorSection}>
+              <Pressable
+                style={styles.creatorButton}
+                onPress={() => setShowCreatorModal(true)}
+              >
+                <View style={styles.creatorButtonContent}>
+                  <UserIcon size={20} color={colors.primary[500]} />
+                  <Text style={styles.creatorButtonText}>Oyun Kurucu Bilgileri</Text>
+                </View>
+              </Pressable>
+            </View>
+          )}
+
           <View style={styles.actionSection}>{renderActionButton()}</View>
         </ScrollView>
       </View>
+
+      {/* Creator Profile Modal */}
+      <CreatorProfileModal
+        visible={showCreatorModal}
+        creator={(game as any)?.creator || null}
+        onClose={() => setShowCreatorModal(false)}
+      />
     </>
   );
 }
@@ -505,6 +538,27 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
     lineHeight: typography.sizes.md * typography.lineHeights.normal,
+  },
+  creatorSection: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
+  creatorButton: {
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  creatorButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  creatorButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary[500],
   },
   actionSection: {
     padding: spacing.md,

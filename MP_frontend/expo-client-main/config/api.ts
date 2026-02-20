@@ -3,6 +3,14 @@ import Constants from 'expo-constants';
 
 // Backend API URL'ini ortama göre belirle
 const getApiUrl = (): string => {
+  // FARKLI AĞDAN TEST: .env'de EXPO_PUBLIC_API_URL tanımlıysa onu kullan (ngrok URL)
+  // Örn: EXPO_PUBLIC_API_URL=https://abc123.ngrok-free.app/api
+  const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envApiUrl && envApiUrl.trim()) {
+    console.log(`[API Config] 🌐 Ortam değişkeni - Backend: ${envApiUrl}`);
+    return envApiUrl.endsWith('/api') ? envApiUrl : envApiUrl + '/api';
+  }
+
   // FİZİKSEL CİHAZ İÇİN: Bilgisayarınızın yerel ağ IP adresi
   // Bu IP'yi ipconfig (Windows) veya ifconfig (Mac/Linux) ile bulabilirsiniz
   const LOCAL_NETWORK_IP = '172.20.10.3'; // Bilgisayarınızın IP adresi

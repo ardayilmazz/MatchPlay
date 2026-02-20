@@ -147,38 +147,85 @@ lsof -i :3001
 
 ---
 
-## 🌐 Farklı Ağlardan Erişim
+## 🌐 Farklı Ağlardan Erişim (Başka WiFi / Mobil Veri)
 
-### Seçenek 1: Ngrok Kullanımı (Önerilen)
+**Sorun:** Bilgisayar ve telefon farklı ağlarda olduğunda (örn. telefon mobil veri, bilgisayar ev WiFi'sında) QR kodu okutsanız da uygulama çalışmıyor.
 
-Farklı internetlerden erişim için ngrok kullanabilirsiniz:
+**Sebep:** Varsayılan olarak Expo **LAN modu** kullanır. Sadece aynı ağdaki cihazlar birbirine bağlanabilir.
+
+### Çözüm: Tünel (Tunnel) Modu
+
+#### Adım 1: Expo'yu Tünel Modunda Başlatın
 
 ```bash
-# Ngrok yükleyin
-npm install -g ngrok
+cd MP_frontend/expo-client-main
+npm run tunnel
+# veya: npx expo start --tunnel
+```
 
-# Backend'i ngrok ile expose edin
+Bu komut ngrok kullanarak Metro bundler'ı internete açar. QR kodu artık **herhangi bir ağdaki** cihazdan çalışır.
+
+**Not:** İlk çalıştırmada `@expo/ngrok` paketi yüklenecek, biraz zaman alabilir.
+
+#### Adım 2: Backend'i de Dışarıya Açın (API Çağrıları İçin)
+
+Uygulama yüklense bile backend'e erişemediği için API çağrıları başarısız olur. Backend'i de ngrok ile expose edin:
+
+```bash
+# Yeni bir terminal açın
+# Ngrok yoksa: npm install -g ngrok
 ngrok http 3001
 ```
 
-**Çıktı:**
+**Çıktıda göreceğiniz URL:**
 ```
-Forwarding    https://abc123.ngrok.io -> http://localhost:3001
-```
-
-**Frontend config'i güncelleyin:**
-```typescript
-const API_URL = 'https://abc123.ngrok.io/api';
+Forwarding    https://abc123.ngrok-free.app -> http://localhost:3001
 ```
 
-### Seçenek 2: Port Forwarding
+#### Adım 3: Frontend'e Backend URL'sini Verin
+
+`.env` dosyası oluşturun (MP_frontend/expo-client-main/.env):
+
+```
+EXPO_PUBLIC_API_URL=https://abc123.ngrok-free.app/api
+```
+
+**Önemli:** `abc123` yerine ngrok'un size verdiği gerçek adresi yazın.
+
+Ardından frontend'i yeniden başlatın:
+
+```bash
+npm run tunnel
+```
+
+#### Adım 4: QR Kodu Okutun
+
+Telefon mobil veri veya başka WiFi'da olsa bile QR kodu okutunca uygulama yüklenecek ve API çağrıları ngrok üzerinden çalışacaktır.
+
+---
+
+### Hızlı Özet (Farklı Ağ Testi)
+
+| Adım | Komut / İşlem |
+|------|----------------|
+| 1 | Backend'i başlat: `cd MP_backend && npm run dev` |
+| 2 | Ngrok başlat: `ngrok http 3001` → URL'yi kopyala |
+| 3 | `.env` oluştur: `EXPO_PUBLIC_API_URL=https://XXX.ngrok-free.app/api` |
+| 4 | Expo tünel: `npm run tunnel` |
+| 5 | QR kodu okut (telefon hangi ağda olursa olsun) |
+
+---
+
+### Alternatif: Port Forwarding
 
 Router'ınızın admin panelinden port forwarding ayarlayın:
 - Dış port: 3001
 - İç IP: Bilgisayarınızın IP'si
 - İç port: 3001
 
-⚠️ **Güvenlik Uyarısı:** Production için **SSL/HTTPS** ve **authentication** kullanın!
+Ardından bilgisayarınızın **dış (public) IP** adresini kullanın. (Örn: `http://85.xxx.xxx.xxx:3001/api`)
+
+⚠️ **Güvenlik Uyarısı:** Geliştirme dışında **SSL/HTTPS** ve **kimlik doğrulama** kullanın!
 
 ---
 

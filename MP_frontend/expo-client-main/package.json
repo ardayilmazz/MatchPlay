@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
+    "tunnel": "expo start --tunnel",
     "android": "expo start --android",
     "android:clear": "expo start --android --clear",
     "android:tunnel": "expo start --android --tunnel",

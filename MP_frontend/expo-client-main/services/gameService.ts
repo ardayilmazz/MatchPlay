@@ -64,6 +64,12 @@ export interface GameSession extends GameSessionDraft {
   creatorId: string;
   status: 'draft' | 'open' | 'full' | 'cancelled' | 'completed';
   currentPlayers: string[];
+  acceptedPlayers?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePhoto?: string;
+  }>;
   pendingRequests: string[];
   createdAt: string;
   updatedAt: string;
@@ -392,11 +398,29 @@ export const gameService = {
   // Tek oyun detayı getir
   getGameById: async (id: string): Promise<any | null> => {
     try {
-      const session = await fetchGameSession(id);
+      const session = await fetchGameSession(id) as any;
       
+      // Dinamik neededPlayers hesaplama
+      const acceptedPlayersCount = session.acceptedPlayers?.length || 0;
+      const dynamicNeededPlayers = Math.max(0, (session.totalPlayers || 2) - acceptedPlayersCount - 1);
+      
+      // Creator bilgilerini al (populate edilmişse)
+      const creator = session.creatorId && typeof session.creatorId === 'object' 
+        ? session.creatorId 
+        : null;
+
       return {
         id: session._id,
-        creatorId: session.creatorId,
+        creatorId: creator?._id || session.creatorId,
+        creator: creator ? {
+          _id: creator._id,
+          firstName: creator.firstName,
+          lastName: creator.lastName,
+          profilePhoto: creator.profilePhoto,
+          bio: creator.bio,
+          gender: creator.gender,
+          birthDate: creator.birthDate,
+        } : null,
         sportId: session.gameTypeId,
         sportName: session.gameType?.name || 'Oyun',
         cityId: session.cityId || '',
@@ -409,7 +433,9 @@ export const gameService = {
         startTime: session.startDate,
         endTime: session.startDate,
         totalPlayers: session.totalPlayers || 2,
-        currentPlayers: session.currentPlayers?.length || 1,
+        currentPlayers: acceptedPlayersCount + 1, // acceptedPlayers + creator
+        neededPlayers: dynamicNeededPlayers,
+        acceptedPlayers: session.acceptedPlayers || [],
         skillLevel: session.skillLevel || 'orta',
         description: session.description || '',
         status: session.status,

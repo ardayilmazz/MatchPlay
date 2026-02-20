@@ -22,6 +22,15 @@ export type GameSkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'everyon
 export interface Game {
   id: string;
   creatorId: string;
+  creator?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePhoto?: string;
+    bio?: string;
+    gender?: string;
+    birthDate?: string;
+  };
   sportId: string;
   sportName: string;
   cityId: string;
@@ -35,6 +44,13 @@ export interface Game {
   endTime: string; // ISO string
   totalPlayers: number;
   currentPlayers: number;
+  neededPlayers?: number;
+  acceptedPlayers?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePhoto?: string;
+  }>;
   skillLevel: GameSkillLevel | string;
   description: string;
   status: GameStatus | string;
