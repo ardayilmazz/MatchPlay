@@ -111,7 +111,7 @@ export default function Step1GameStep({
             onPress={() => setShowLocationTimeMenu(true)}
           >
             <View style={styles.sectionContent}>
-              <Text style={styles.sectionTitle}>Konum ve Zaman</Text>
+              <Text style={styles.sectionTitle}>Konum ve Zaman*</Text>
               {(location || startDate) && (
                 <View style={styles.selectedInfo}>
                   <Check size={16} color={colors.success[500]} />

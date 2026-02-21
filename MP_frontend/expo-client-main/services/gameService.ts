@@ -226,6 +226,32 @@ export const fetchGameSession = async (id: string): Promise<GameSession> => {
   }
 };
 
+// Kullanıcının katıldığı oyunları getir (başkasının kurduğu, kabul edilmiş, henüz oynanmamış)
+export const fetchJoinedGameSessions = async (token: string): Promise<any[]> => {
+  try {
+    const response = await fetch(`${API_URL}/games/sessions/joined`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      return data.data;
+    }
+
+    throw new Error('Katıldığınız oyunlar getirilemedi');
+  } catch (error) {
+    console.error('[gameService] fetchJoinedGameSessions error:', error);
+    throw error;
+  }
+};
+
 // Kullanıcının kendi oyunlarını getir
 export const fetchMyGameSessions = async (token: string): Promise<GameSession[]> => {
   try {
@@ -282,6 +308,7 @@ export const gameService = {
   fetchGameSessions,
   fetchGameSession,
   fetchMyGameSessions,
+  fetchJoinedGameSessions,
   // Oyunları filtrelerle getir
   getGames: async (filters?: {
     nameSearch?: string;

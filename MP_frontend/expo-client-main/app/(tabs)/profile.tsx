@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Edit, Clock, Users, ChevronRight, Settings, Calendar } from 'lucide-react-native';
+import { Edit, Clock, Users, ChevronRight, Settings, Calendar, UserCheck } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { router, useFocusEffect } from 'expo-router';
@@ -108,6 +108,17 @@ export default function ProfileScreen() {
             <View style={styles.menuItemLeft}>
               <Calendar size={20} color={colors.primary[500]} />
               <Text style={styles.menuItemText}>Planladığım Oyunlar</Text>
+            </View>
+            <ChevronRight size={20} color={colors.text.tertiary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/my/joined-games' as any)}
+          >
+            <View style={styles.menuItemLeft}>
+              <UserCheck size={20} color={colors.primary[500]} />
+              <Text style={styles.menuItemText}>Katıldığım Oyunlar</Text>
             </View>
             <ChevronRight size={20} color={colors.text.tertiary} />
           </TouchableOpacity>

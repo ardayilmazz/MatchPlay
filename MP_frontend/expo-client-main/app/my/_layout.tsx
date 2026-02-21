@@ -7,6 +7,10 @@ export default function MyLayout() {
         headerShown: false,
       }}
     >
+      <Stack.Screen name="games" />
+      <Stack.Screen name="games/[id]" />
+      <Stack.Screen name="joined-games" />
+      <Stack.Screen name="joined-games/[id]" />
       <Stack.Screen name="requests" />
       <Stack.Screen name="waitlist" />
     </Stack>

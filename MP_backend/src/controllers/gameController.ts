@@ -233,6 +233,39 @@ export const getMyGameSessions = async (req: Request, res: Response) => {
   }
 };
 
+// GET /api/games/sessions/joined - Kullanıcının katıldığı oyunları listele (başkasının kurduğu, kabul edilmiş, henüz oynanmamış)
+export const getJoinedGameSessions = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+
+    console.log('[getJoinedGameSessions] Kullanıcının katıldığı oyunlar isteniyor:', userId);
+
+    const gameSessions = await GameSession.find({
+      creatorId: { $ne: userId }, // Kendi oyunu değil
+      acceptedPlayers: userId, // Katılım isteği kabul edilmiş
+      status: { $in: ['open', 'full'] }, // Henüz oynanmamış (completed değil)
+      startDate: { $gte: new Date() }, // Gelecek tarihli (henüz başlamamış)
+    })
+      .populate('gameTypeId')
+      .populate('creatorId', 'firstName lastName profilePhoto')
+      .populate('acceptedPlayers', 'firstName lastName profilePhoto')
+      .sort({ startDate: 1 });
+
+    console.log(`[getJoinedGameSessions] ${gameSessions.length} katıldığı oyun bulundu`);
+
+    res.status(200).json({
+      success: true,
+      data: gameSessions,
+    });
+  } catch (error: any) {
+    console.error('[getJoinedGameSessions] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Katıldığınız oyunlar getirilirken bir hata oluştu.',
+    });
+  }
+};
+
 // GET /api/games/sessions - Tüm açık oyunları listele
 export const getGameSessions = async (req: Request, res: Response) => {
   try {
@@ -364,7 +397,7 @@ export const getGameSession = async (req: Request, res: Response) => {
       .populate('gameTypeId')
       .populate('creatorId', 'firstName lastName profilePhoto bio gender birthDate')
       .populate('currentPlayers', 'firstName lastName profilePhoto')
-      .populate('acceptedPlayers', 'firstName lastName profilePhoto');
+      .populate('acceptedPlayers', 'firstName lastName profilePhoto gender birthDate');
 
     if (!gameSession) {
       return res.status(404).json({

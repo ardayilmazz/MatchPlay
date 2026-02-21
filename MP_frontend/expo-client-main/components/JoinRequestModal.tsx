@@ -9,12 +9,15 @@ import {
   Image,
   ScrollView,
   Alert,
+  Dimensions,
 } from 'react-native';
-import { X, User, Briefcase, Calendar, MessageSquare } from 'lucide-react-native';
+import { X, User, Briefcase, Calendar, MessageSquare, Users } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { gameRequestService } from '@/services/gameRequestService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface JoinRequestModalProps {
   visible: boolean;
@@ -131,7 +134,7 @@ export default function JoinRequestModal({ visible, requestId, onClose }: JoinRe
                   />
                 ) : (
                   <View style={styles.profilePhotoPlaceholder}>
-                    <User size={48} color={colors.neutral[400]} />
+                    <User size={64} color={colors.neutral[400]} />
                   </View>
                 )}
 
@@ -143,7 +146,7 @@ export default function JoinRequestModal({ visible, requestId, onClose }: JoinRe
                 <View style={styles.infoRow}>
                   <Calendar size={16} color={colors.text.tertiary} />
                   <Text style={styles.infoText}>
-                    {requestData.user.age ? `${requestData.user.age} yaşında` : 'Yaş belirtilmemiş'}
+                    {requestData.user.age != null ? `${requestData.user.age} yaşında` : 'Yaş belirtilmemiş'}
                   </Text>
                   <Text style={styles.infoDivider}>•</Text>
                   <Text style={styles.infoText}>{getGenderLabel(requestData.user.gender)}</Text>
@@ -152,6 +155,17 @@ export default function JoinRequestModal({ visible, requestId, onClose }: JoinRe
 
               {/* Detay Bilgileri */}
               <View style={styles.detailsSection}>
+                {/* Cinsiyet */}
+                <View style={styles.detailItem}>
+                  <View style={styles.detailIcon}>
+                    <Users size={20} color={colors.primary[500]} />
+                  </View>
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailLabel}>Cinsiyet</Text>
+                    <Text style={styles.detailValue}>{getGenderLabel(requestData.user.gender)}</Text>
+                  </View>
+                </View>
+
                 {/* Üniversite */}
                 {requestData.user.university && (
                   <View style={styles.detailItem}>
@@ -228,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[0],
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    maxHeight: '85%',
+    height: SCREEN_HEIGHT * 0.9,
     ...shadows.lg,
   },
   header: {
@@ -248,7 +262,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   loadingContainer: {
-    padding: spacing.xxxl,
+    padding: spacing.xxl,
     alignItems: 'center',
   },
   loadingText: {
@@ -265,14 +279,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   profilePhoto: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     borderRadius: borderRadius.full,
     marginBottom: spacing.md,
   },
   profilePhotoPlaceholder: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     borderRadius: borderRadius.full,
     backgroundColor: colors.neutral[100],
     justifyContent: 'center',
@@ -349,7 +363,7 @@ const styles = StyleSheet.create({
     lineHeight: typography.sizes.md * typography.lineHeights.normal,
   },
   errorContainer: {
-    padding: spacing.xxxl,
+    padding: spacing.xxl,
     alignItems: 'center',
   },
   errorText: {

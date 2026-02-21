@@ -6,6 +6,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -28,6 +29,7 @@ import TeamPlayersModal from '@/components/create-game/modals/TeamPlayersModal';
 import SkillLevelModal from '@/components/create-game/modals/SkillLevelModal';
 import GenderPreferenceModal from '@/components/create-game/modals/GenderPreferenceModal';
 import SimpleTextModal from '@/components/create-game/modals/SimpleTextModal';
+import PlayerProfileModal from '@/components/PlayerProfileModal';
 
 export default function GameDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -48,6 +50,8 @@ export default function GameDetailScreen() {
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [showPlayerModal, setShowPlayerModal] = useState(false);
 
   // Oyun tipleri
   const [gameTypes, setGameTypes] = useState<GameType[]>([]);
@@ -499,22 +503,36 @@ export default function GameDetailScreen() {
           </TouchableOpacity>
 
           {/* 9. Katılan Oyuncular */}
-          {editedGame.acceptedPlayers && editedGame.acceptedPlayers.length > 0 && (
+          {editedGame.acceptedPlayers && editedGame.acceptedPlayers.length > 0 ? (
             <View style={styles.nonEditableItem}>
               <View style={styles.itemLeft}>
                 <Text style={styles.itemLabel}>Katılan Oyuncular ({editedGame.acceptedPlayers.length})</Text>
                 <View style={styles.playersList}>
                   {editedGame.acceptedPlayers.map((player: any, index: number) => (
-                    <View key={player._id || index} style={styles.playerItem}>
-                      <Text style={styles.playerName}>
+                    <Pressable
+                      key={player._id || index}
+                      style={styles.playerItem}
+                      onPress={() => {
+                        setSelectedPlayer({
+                          _id: player._id,
+                          firstName: player.firstName,
+                          lastName: player.lastName,
+                          profilePhoto: player.profilePhoto,
+                          gender: player.gender,
+                          birthDate: player.birthDate,
+                        });
+                        setShowPlayerModal(true);
+                      }}
+                    >
+                      <Text style={[styles.playerName, styles.playerNameClickable]}>
                         • {player.firstName} {player.lastName}
                       </Text>
-                    </View>
+                    </Pressable>
                   ))}
                 </View>
               </View>
             </View>
-          )}
+          ) : null}
 
           {/* 10. Yetenek Seviyesi */}
           <TouchableOpacity 
@@ -675,6 +693,15 @@ export default function GameDetailScreen() {
         onSave={handleGenderUpdate}
         initialGenderPreference={editedGame.genderPreference}
       />
+
+      <PlayerProfileModal
+        visible={showPlayerModal}
+        player={selectedPlayer}
+        onClose={() => {
+          setShowPlayerModal(false);
+          setSelectedPlayer(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -760,6 +787,10 @@ const styles = StyleSheet.create({
   playerName: {
     fontSize: typography.sizes.sm,
     color: colors.text.primary,
+  },
+  playerNameClickable: {
+    color: colors.primary[500],
+    fontWeight: typography.weights.medium,
   },
   errorText: {
     fontSize: typography.sizes.lg,

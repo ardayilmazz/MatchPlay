@@ -4,6 +4,7 @@ import {
   createOrUpdateGameSession,
   getMyDraft,
   getMyGameSessions,
+  getJoinedGameSessions,
   getGameSessions,
   getGameSession,
   updateGameSession,
@@ -131,6 +132,20 @@ router.get('/sessions/my-draft', protect, getMyDraft);
  *         description: Başarılı
  */
 router.get('/sessions/my', protect, getMyGameSessions);
+
+/**
+ * @swagger
+ * /api/games/sessions/joined:
+ *   get:
+ *     summary: Kullanıcının katıldığı oyunları getir (kabul edilmiş, henüz oynanmamış)
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Başarılı
+ */
+router.get('/sessions/joined', protect, getJoinedGameSessions);
 
 /**
  * @swagger
