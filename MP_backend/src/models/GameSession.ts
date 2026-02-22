@@ -33,6 +33,7 @@ export interface IGameSession extends Document {
 
   // Oyun Durumu
   status: 'draft' | 'open' | 'full' | 'cancelled' | 'completed';
+  gameStatus: 'not_started' | 'in_progress' | 'completed';
   currentPlayers: mongoose.Types.ObjectId[]; // Deprecated - acceptedPlayers kullanın
   acceptedPlayers: mongoose.Types.ObjectId[]; // Oyuna kabul edilen oyuncular (creator hariç)
   pendingRequests: mongoose.Types.ObjectId[];
@@ -97,6 +98,12 @@ const GameSessionSchema: Schema = new Schema(
       type: String,
       enum: ['draft', 'open', 'full', 'cancelled', 'completed'],
       default: 'draft',
+      required: true,
+    },
+    gameStatus: {
+      type: String,
+      enum: ['not_started', 'in_progress', 'completed'],
+      default: 'not_started',
       required: true,
     },
     currentPlayers: [

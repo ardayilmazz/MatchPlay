@@ -532,4 +532,51 @@ export const gameService = {
       throw error;
     }
   },
+
+  // Tamamlanmış oyunları getir
+  fetchCompletedGames: async (token: string): Promise<any[]> => {
+    try {
+      console.log('[gameService.fetchCompletedGames] Tamamlanmış oyunlar getiriliyor');
+
+      const response = await fetch(`${API_URL}/games/sessions/completed`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Tamamlanmış oyunlar getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[gameService.fetchCompletedGames] Hata:', error);
+      throw error;
+    }
+  },
+
+  // Tamamlanmış oyunu sil
+  deleteCompletedGame: async (gameId: string, token: string): Promise<void> => {
+    try {
+      console.log('[gameService.deleteCompletedGame] Oyun siliniyor:', gameId);
+
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}/completed`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Oyun silinemedi');
+      }
+    } catch (error: any) {
+      console.error('[gameService.deleteCompletedGame] Hata:', error);
+      throw error;
+    }
+  },
 };

@@ -9,6 +9,7 @@ import locationRoutes from './routes/locationRoutes';
 import joinRequestRoutes from './routes/joinRequestRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import swaggerSpec from './config/swagger';
+import { updateGameStatuses } from './utils/gameStatusUpdater';
 
 dotenv.config();
 
@@ -73,6 +74,11 @@ const server = app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Yerel ağ erişimi: http://172.20.10.3:${PORT}`);
   console.log(`Swagger dokümantasyonu: http://localhost:${PORT}/api-docs`);
   console.log(`Başlangıç zamanı: ${new Date().toISOString()}`);
+  
+  // Oyun durumlarını güncelleme job'ını başlat (her 1 dakikada bir)
+  updateGameStatuses(); // İlk çalıştırma
+  setInterval(updateGameStatuses, 60000); // Her 1 dakikada bir
+  console.log('Oyun durumu güncelleme job\'ı başlatıldı (1 dakika aralıklarla)');
 });
 
 export default server;

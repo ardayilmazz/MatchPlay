@@ -5,10 +5,12 @@ import {
   getMyDraft,
   getMyGameSessions,
   getJoinedGameSessions,
+  getCompletedGames,
   getGameSessions,
   getGameSession,
   updateGameSession,
   deleteGameSession,
+  deleteCompletedGame,
   getStatistics,
 } from '../controllers/gameController';
 import { protect } from '../middleware/authMiddleware';
@@ -149,6 +151,20 @@ router.get('/sessions/joined', protect, getJoinedGameSessions);
 
 /**
  * @swagger
+ * /api/games/sessions/completed:
+ *   get:
+ *     summary: Kullanıcının tamamlanmış oyunlarını getir
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Başarılı
+ */
+router.get('/sessions/completed', protect, getCompletedGames);
+
+/**
+ * @swagger
  * /api/games/sessions:
  *   get:
  *     summary: Tüm açık oyunları listele
@@ -229,6 +245,26 @@ router.get('/sessions/:id', getGameSession);
  *         description: Oyun bulunamadı
  */
 router.put('/sessions/:id', protect, updateGameSession);
+
+/**
+ * @swagger
+ * /api/games/sessions/{id}/completed:
+ *   delete:
+ *     summary: Tamamlanmış oyunu sil
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Oyun silindi
+ */
+router.delete('/sessions/:id/completed', protect, deleteCompletedGame);
 
 /**
  * @swagger

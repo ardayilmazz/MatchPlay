@@ -104,6 +104,16 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    // İşlenmiş katılma istekleri için detay açma
+    const isProcessed = 
+      notification.type === 'join_request_accepted' || 
+      notification.type === 'join_request_rejected' ||
+      (notification.type === 'join_request_received' && notification.isProcessed === true);
+    
+    if (isProcessed) {
+      return; // İşlenmiş bildirimler tıklanamaz
+    }
+
     if (!notification.read) {
       await handleMarkAsRead(notification._id);
     }
@@ -131,6 +141,8 @@ export default function NotificationsScreen() {
         return <CheckCircle2 size={20} color={colors.success[500]} />;
       case 'join_request_rejected':
         return <XCircle size={20} color={colors.error[500]} />;
+      case 'join_request_cancelled':
+        return <XCircle size={20} color={colors.neutral[500]} />;
       case 'game_cancelled':
         return <XCircle size={20} color={colors.error[500]} />;
       case 'game_full':
@@ -152,6 +164,8 @@ export default function NotificationsScreen() {
         return colors.success[100];
       case 'join_request_rejected':
         return colors.error[100];
+      case 'join_request_cancelled':
+        return colors.neutral[100];
       case 'game_cancelled':
         return colors.error[100];
       case 'game_full':
@@ -182,26 +196,44 @@ export default function NotificationsScreen() {
     });
   };
 
-  const renderNotification = ({ item }: { item: Notification }) => (
-    <Pressable
-      style={[styles.notificationCard, !item.read && styles.unreadCard]}
-      onPress={() => handleNotificationPress(item)}
-    >
-      <View style={[styles.iconContainer, { backgroundColor: getNotificationColor(item.type) }]}>
-        {getNotificationIcon(item.type)}
-      </View>
+  const renderNotification = ({ item }: { item: Notification }) => {
+    // İşlenmiş bildirimler: accepted/rejected bildirimleri VEYA işlenmiş join_request_received bildirimleri
+    const isProcessed = 
+      item.type === 'join_request_accepted' || 
+      item.type === 'join_request_rejected' ||
+      (item.type === 'join_request_received' && item.isProcessed === true);
+    
+    return (
+      <Pressable
+        style={[
+          styles.notificationCard, 
+          !item.read && styles.unreadCard,
+          isProcessed && styles.processedCard
+        ]}
+        onPress={() => handleNotificationPress(item)}
+        disabled={isProcessed}
+      >
+        <View style={[styles.iconContainer, { backgroundColor: getNotificationColor(item.type) }]}>
+          {getNotificationIcon(item.type)}
+        </View>
 
-      <View style={styles.notificationContent}>
-        <Text style={[styles.notificationTitle, !item.read && styles.unreadText]}>
-          {item.title}
-        </Text>
-        <Text style={styles.notificationMessage}>{item.message}</Text>
-        <Text style={styles.notificationTime}>{formatDate(item.createdAt)}</Text>
-      </View>
+        <View style={styles.notificationContent}>
+          <Text style={[styles.notificationTitle, !item.read && styles.unreadText]}>
+            {item.title}
+          </Text>
+          <Text style={styles.notificationMessage}>{item.message}</Text>
+          <Text style={styles.notificationTime}>{formatDate(item.createdAt)}</Text>
+        </View>
 
-      {!item.read && <View style={styles.unreadDot} />}
-    </Pressable>
-  );
+        <View style={styles.rightSide}>
+          {isProcessed && (
+            <Check size={20} color={colors.success[500]} style={styles.processedIcon} />
+          )}
+          {!item.read && !isProcessed && <View style={styles.unreadDot} />}
+        </View>
+      </Pressable>
+    );
+  };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
@@ -368,6 +400,9 @@ const styles = StyleSheet.create({
   unreadCard: {
     backgroundColor: colors.primary[50],
   },
+  processedCard: {
+    opacity: 0.7,
+  },
   iconContainer: {
     width: 40,
     height: 40,
@@ -378,6 +413,15 @@ const styles = StyleSheet.create({
   },
   notificationContent: {
     flex: 1,
+  },
+  rightSide: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: spacing.xs,
+    position: 'relative',
+  },
+  processedIcon: {
+    marginRight: spacing.xs,
   },
   notificationTitle: {
     fontSize: typography.sizes.md,
@@ -403,9 +447,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   unreadDot: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
     width: 8,
     height: 8,
     borderRadius: borderRadius.full,

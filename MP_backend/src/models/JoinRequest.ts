@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IJoinRequest extends Document {
   gameSessionId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
   message?: string; // Kullanıcının opsiyonel mesajı
   respondedAt?: Date;
   createdAt?: Date;
@@ -24,7 +24,7 @@ const JoinRequestSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'rejected'],
+      enum: ['pending', 'accepted', 'rejected', 'cancelled'],
       default: 'pending',
       required: true,
     },

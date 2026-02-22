@@ -4,6 +4,7 @@ export type NotificationType =
   | 'join_request_received'  // Lobi sahibine: X katılmak istiyor
   | 'join_request_accepted'  // İstek sahibine: Katılım isteğiniz kabul edildi
   | 'join_request_rejected'  // İstek sahibine: Katılım isteğiniz reddedildi
+  | 'join_request_cancelled' // Lobi sahibine: X katılım isteğini iptal etti
   | 'game_cancelled'         // Tüm oyunculara: Oyun iptal edildi
   | 'game_full'              // İlgilenen herkese: Oyun doldu
   | 'game_reminder'          // Katılanlara: Oyun 1 saat içinde başlayacak
@@ -39,6 +40,7 @@ const NotificationSchema: Schema = new Schema(
         'join_request_received',
         'join_request_accepted',
         'join_request_rejected',
+        'join_request_cancelled',
         'game_cancelled',
         'game_full',
         'game_reminder',

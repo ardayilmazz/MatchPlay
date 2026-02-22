@@ -11,6 +11,8 @@ export default function MyLayout() {
       <Stack.Screen name="games/[id]" />
       <Stack.Screen name="joined-games" />
       <Stack.Screen name="joined-games/[id]" />
+      <Stack.Screen name="completed-games" />
+      <Stack.Screen name="completed-games/[id]" />
       <Stack.Screen name="requests" />
       <Stack.Screen name="waitlist" />
     </Stack>

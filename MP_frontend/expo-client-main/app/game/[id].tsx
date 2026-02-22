@@ -132,11 +132,9 @@ export default function GameDetailsScreen() {
 
     setActionLoading(true);
     try {
-      // TODO: Cancel endpoint eklenecek
-      Alert.alert('Bilgi', 'İptal özelliği yakında eklenecek');
-      // await gameRequestService.cancelJoinRequest(userRequest.id, user.token);
-      // Alert.alert('Başarılı', 'İsteğiniz iptal edildi');
-      // await checkUserStatus();
+      await gameRequestService.cancelJoinRequest(userRequest.id, user.token);
+      Alert.alert('Başarılı', 'İsteğiniz iptal edildi');
+      await checkUserStatus();
     } catch (error: any) {
       Alert.alert('Hata', error.message || 'İstek iptal edilirken hata oluştu');
     } finally {

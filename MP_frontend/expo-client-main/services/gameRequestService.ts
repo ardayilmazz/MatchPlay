@@ -163,6 +163,29 @@ export const gameRequestService = {
     }
   },
 
+  // Katılma isteğini iptal et (istek sahibi)
+  cancelJoinRequest: async (requestId: string, token: string): Promise<void> => {
+    try {
+      console.log(`[gameRequestService] İstek iptal ediliyor - requestId: ${requestId}`);
+      
+      const response = await fetch(`${API_URL}/games/requests/${requestId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'İstek iptal edilemedi');
+      }
+    } catch (error: any) {
+      console.error('[gameRequestService] cancelJoinRequest error:', error);
+      throw error;
+    }
+  },
+
   // Oyundan ayrıl (kabul edilmiş oyuncu)
   leaveGame: async (gameId: string, token: string): Promise<void> => {
     try {

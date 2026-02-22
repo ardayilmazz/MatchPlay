@@ -54,27 +54,52 @@ export const sendJoinRequest = async (req: Request, res: Response) => {
       });
     }
 
-    // Daha önce istek gönderilmiş mi kontrol et
-    const existingRequest = await JoinRequest.findOne({
+    // Daha önce bekleyen istek var mı?
+    const pendingRequest = await JoinRequest.findOne({
       gameSessionId,
       userId,
       status: 'pending',
     });
 
-    if (existingRequest) {
+    if (pendingRequest) {
       return res.status(400).json({
         success: false,
         message: 'Bu oyuna zaten katılma isteği gönderdiniz.',
       });
     }
 
-    // Katılma isteği oluştur
-    const joinRequest = await JoinRequest.create({
+    // cancelled veya rejected istek varsa yeniden kullan (kullanıcı ayrıldıktan sonra tekrar katılmak isteyebilir)
+    const closedRequest = await JoinRequest.findOne({
       gameSessionId,
       userId,
-      message: message || '',
-      status: 'pending',
+      status: { $in: ['cancelled', 'rejected'] },
     });
+
+    let joinRequest: any = null;
+
+    if (closedRequest) {
+      // Mevcut kaydı güncelle (pending'e çevir)
+      joinRequest = await JoinRequest.findByIdAndUpdate(
+        closedRequest._id,
+        { status: 'pending', message: message || '', respondedAt: null },
+        { new: true }
+      );
+      console.log('[sendJoinRequest] Önceki istek yeniden aktif edildi:', joinRequest._id);
+    } else {
+      // Yeni katılma isteği oluştur
+      joinRequest = await JoinRequest.create({
+        gameSessionId,
+        userId,
+        message: message || '',
+        status: 'pending',
+      });
+    }
+    if (!joinRequest) {
+      return res.status(500).json({
+        success: false,
+        message: 'Katılma isteği oluşturulamadı.',
+      });
+    }
 
     // Kullanıcı bilgilerini al
     const user = await User.findById(userId).select('firstName lastName');
@@ -187,14 +212,31 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
       },
     });
 
-    // Oyun doldu mu kontrol et
+    // Oyun durumunu güncelle
     const updatedSession = await GameSession.findById(gameSession._id);
-    const totalAcceptedPlayers = (updatedSession?.acceptedPlayers?.length || 0);
-    const totalNeededPlayers = updatedSession?.neededPlayers || 0;
+    if (!updatedSession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Oyun bulunamadı.',
+      });
+    }
+
+    const totalAcceptedPlayers = (updatedSession.acceptedPlayers?.length || 0);
+    const totalPlayers = updatedSession.totalPlayers || 0;
+    const currentNeededPlayers = Math.max(0, totalPlayers - (totalAcceptedPlayers + 1)); // +1 = creator
     
-    if (updatedSession && totalAcceptedPlayers >= totalNeededPlayers) {
-      await GameSession.findByIdAndUpdate(gameSession._id, { status: 'full' });
-      console.log('[acceptJoinRequest] Oyun doldu, status: full');
+    // neededPlayers'ı güncelle ve oyun doldu mu kontrol et
+    if (currentNeededPlayers === 0) {
+      await GameSession.findByIdAndUpdate(gameSession._id, { 
+        neededPlayers: 0,
+        status: 'full' 
+      });
+      console.log('[acceptJoinRequest] Oyun doldu, status: full, neededPlayers: 0');
+    } else {
+      await GameSession.findByIdAndUpdate(gameSession._id, { 
+        neededPlayers: currentNeededPlayers 
+      });
+      console.log('[acceptJoinRequest] neededPlayers güncellendi:', currentNeededPlayers);
     }
 
     // İstek sahibine bildirim gönder
@@ -355,11 +397,31 @@ export const leaveGame = async (req: Request, res: Response) => {
       },
     });
 
-    // Oyun durumunu güncelle (full ise open yap)
+    // Oyun durumunu güncelle
     const updatedSession = await GameSession.findById(gameSessionId);
-    if (updatedSession && updatedSession.status === 'full') {
-      await GameSession.findByIdAndUpdate(gameSessionId, { status: 'open' });
-      console.log('[leaveGame] Oyun durumu full -> open');
+    if (!updatedSession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Oyun bulunamadı.',
+      });
+    }
+
+    const totalAcceptedPlayers = (updatedSession.acceptedPlayers?.length || 0);
+    const totalPlayers = updatedSession.totalPlayers || 0;
+    const currentNeededPlayers = Math.max(0, totalPlayers - (totalAcceptedPlayers + 1)); // +1 = creator
+    
+    // neededPlayers'ı güncelle ve oyun durumunu kontrol et
+    if (updatedSession.status === 'full') {
+      await GameSession.findByIdAndUpdate(gameSessionId, { 
+        neededPlayers: currentNeededPlayers,
+        status: 'open' 
+      });
+      console.log('[leaveGame] Oyun durumu full -> open, neededPlayers:', currentNeededPlayers);
+    } else {
+      await GameSession.findByIdAndUpdate(gameSessionId, { 
+        neededPlayers: currentNeededPlayers 
+      });
+      console.log('[leaveGame] neededPlayers güncellendi:', currentNeededPlayers);
     }
 
     // Kabul edilmiş isteği iptal et
@@ -481,6 +543,82 @@ export const getGameRequests = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'İstekler getirilirken bir hata oluştu.',
+    });
+  }
+};
+
+// POST /api/games/requests/:id/cancel - Katılma isteğini iptal et (istek sahibi)
+export const cancelJoinRequest = async (req: Request, res: Response) => {
+  try {
+    const { id: requestId } = req.params;
+    const userId = (req as any).user._id;
+
+    console.log('[cancelJoinRequest] İstek iptal ediliyor:', { requestId, userId });
+
+    if (!mongoose.Types.ObjectId.isValid(requestId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz istek ID.',
+      });
+    }
+
+    const joinRequest = await JoinRequest.findById(requestId)
+      .populate('gameSessionId');
+
+    if (!joinRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Katılma isteği bulunamadı.',
+      });
+    }
+
+    // Sadece istek sahibi iptal edebilir
+    if (joinRequest.userId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu isteği iptal etme yetkiniz yok.',
+      });
+    }
+
+    // Sadece pending istekler iptal edilebilir
+    if (joinRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu istek artık iptal edilemez.',
+      });
+    }
+
+    // İsteği iptal et
+    joinRequest.status = 'cancelled';
+    await joinRequest.save();
+
+    const gameSession = joinRequest.gameSessionId as any;
+    const user = await User.findById(userId).select('firstName lastName');
+
+    // Lobi sahibine bildirim gönder
+    await Notification.create({
+      userId: gameSession.creatorId,
+      type: 'join_request_cancelled',
+      title: 'Katılım İsteği İptal Edildi',
+      message: `${user?.firstName} ${user?.lastName} katılım isteğini iptal etti.`,
+      data: {
+        gameSessionId: gameSession._id.toString(),
+        requestId: String(joinRequest._id),
+      },
+      read: false,
+    });
+
+    console.log('[cancelJoinRequest] İstek iptal edildi:', joinRequest._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Katılma isteği iptal edildi.',
+    });
+  } catch (error: any) {
+    console.error('[cancelJoinRequest] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'İstek iptal edilirken bir hata oluştu.',
     });
   }
 };

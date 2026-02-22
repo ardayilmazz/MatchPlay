@@ -213,6 +213,7 @@ export const getMyGameSessions = async (req: Request, res: Response) => {
     const gameSessions = await GameSession.find({
       creatorId: userId,
       status: { $in: ['draft', 'open', 'full'] },
+      gameStatus: { $ne: 'completed' },
     })
       .populate('gameTypeId')
       .populate('acceptedPlayers', 'firstName lastName profilePhoto')
@@ -244,6 +245,7 @@ export const getJoinedGameSessions = async (req: Request, res: Response) => {
       creatorId: { $ne: userId }, // Kendi oyunu değil
       acceptedPlayers: userId, // Katılım isteği kabul edilmiş
       status: { $in: ['open', 'full'] }, // Henüz oynanmamış (completed değil)
+      gameStatus: { $ne: 'completed' },
       startDate: { $gte: new Date() }, // Gelecek tarihli (henüz başlamamış)
     })
       .populate('gameTypeId')
@@ -288,6 +290,9 @@ export const getGameSessions = async (req: Request, res: Response) => {
     const filter: any = {};
 
     // Sadece open ve full durumundaki oyunları göster (draft hariç)
+    // Tamamlanmış oyunları keşfet sayfasında gösterme
+    filter.gameStatus = { $ne: 'completed' };
+    
     if (status) {
       filter.status = status;
     } else {
@@ -574,6 +579,102 @@ export const getStatistics = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'İstatistikler getirilirken bir hata oluştu.',
+    });
+  }
+};
+
+// GET /api/games/sessions/completed - Kullanıcının tamamlanmış oyunlarını getir
+export const getCompletedGames = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+
+    console.log('[getCompletedGames] Tamamlanmış oyunlar getiriliyor:', { userId });
+
+    const completedGames = await GameSession.find({
+      $or: [
+        { creatorId: userId },
+        { acceptedPlayers: userId },
+      ],
+      gameStatus: 'completed',
+    })
+      .populate('gameTypeId')
+      .populate('creatorId', 'firstName lastName profilePhoto')
+      .populate('acceptedPlayers', 'firstName lastName profilePhoto')
+      .sort({ startDate: -1 });
+
+    console.log(`[getCompletedGames] ${completedGames.length} tamamlanmış oyun bulundu`);
+
+    res.status(200).json({
+      success: true,
+      data: completedGames,
+    });
+  } catch (error: any) {
+    console.error('[getCompletedGames] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Tamamlanmış oyunlar getirilirken bir hata oluştu.',
+    });
+  }
+};
+
+// DELETE /api/games/sessions/:id/completed - Tamamlanmış oyunu sil
+export const deleteCompletedGame = async (req: Request, res: Response) => {
+  try {
+    const { id: gameSessionId } = req.params;
+    const userId = (req as any).user._id;
+
+    console.log('[deleteCompletedGame] Oyun siliniyor:', { gameSessionId, userId });
+
+    if (!mongoose.Types.ObjectId.isValid(gameSessionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz oyun ID.',
+      });
+    }
+
+    const gameSession = await GameSession.findById(gameSessionId);
+
+    if (!gameSession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Oyun bulunamadı.',
+      });
+    }
+
+    // Sadece tamamlanmış oyunlar silinebilir
+    if (gameSession.gameStatus !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Sadece tamamlanmış oyunlar silinebilir.',
+      });
+    }
+
+    // Sadece oyun kurucusu veya katılımcılar silebilir
+    const isCreator = gameSession.creatorId.toString() === userId.toString();
+    const isParticipant = gameSession.acceptedPlayers.some(
+      (playerId: mongoose.Types.ObjectId) => playerId.toString() === userId.toString()
+    );
+
+    if (!isCreator && !isParticipant) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu oyunu silme yetkiniz yok.',
+      });
+    }
+
+    await GameSession.findByIdAndDelete(gameSessionId);
+
+    console.log('[deleteCompletedGame] Oyun silindi:', gameSessionId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Oyun başarıyla silindi.',
+    });
+  } catch (error: any) {
+    console.error('[deleteCompletedGame] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Oyun silinirken bir hata oluştu.',
     });
   }
 };

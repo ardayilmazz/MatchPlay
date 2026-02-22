@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Notification from '../models/Notification';
 import { calculateAge } from '../utils/userHelpers';
+import JoinRequest from '../models/JoinRequest';
 
 // GET /api/notifications - Kullanıcının bildirimlerini getir
 export const getNotifications = async (req: Request, res: Response) => {
@@ -19,11 +20,35 @@ export const getNotifications = async (req: Request, res: Response) => {
       .sort({ createdAt: -1 })
       .limit(50);
 
+    // join_request_received bildirimleri için join request durumunu kontrol et
+    const notificationsWithProcessedStatus = await Promise.all(
+      notifications.map(async (notification) => {
+        const notificationObj = notification.toObject() as any;
+        
+        // join_request_received bildirimi ise ve requestId varsa
+        if (notification.type === 'join_request_received' && notification.data?.requestId) {
+          try {
+            const joinRequest = await JoinRequest.findById(notification.data.requestId);
+            if (joinRequest && (joinRequest.status === 'accepted' || joinRequest.status === 'rejected')) {
+              notificationObj.isProcessed = true;
+            } else {
+              notificationObj.isProcessed = false;
+            }
+          } catch (error) {
+            console.error('[getNotifications] Join request kontrolü hatası:', error);
+            notificationObj.isProcessed = false;
+          }
+        }
+        
+        return notificationObj;
+      })
+    );
+
     console.log(`[getNotifications] ${notifications.length} bildirim bulundu`);
 
     res.status(200).json({
       success: true,
-      data: notifications,
+      data: notificationsWithProcessedStatus,
     });
   } catch (error: any) {
     console.error('[getNotifications] Hata:', error.message);

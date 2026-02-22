@@ -4,6 +4,7 @@ import {
   sendJoinRequest,
   acceptJoinRequest,
   rejectJoinRequest,
+  cancelJoinRequest,
   getGameRequests,
   getMyRequestForGame,
   leaveGame,
@@ -122,6 +123,26 @@ router.post('/requests/:id/accept', protect, acceptJoinRequest);
  *         description: İstek reddedildi
  */
 router.post('/requests/:id/reject', protect, rejectJoinRequest);
+
+/**
+ * @swagger
+ * /api/games/requests/{id}/cancel:
+ *   post:
+ *     summary: Katılma isteğini iptal et (istek sahibi)
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: İstek iptal edildi
+ */
+router.post('/requests/:id/cancel', protect, cancelJoinRequest);
 
 /**
  * @swagger

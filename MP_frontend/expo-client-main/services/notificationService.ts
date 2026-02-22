@@ -7,6 +7,7 @@ export interface Notification {
     | 'join_request_received'
     | 'join_request_accepted'
     | 'join_request_rejected'
+    | 'join_request_cancelled'
     | 'game_cancelled'
     | 'game_full'
     | 'game_reminder'
@@ -20,6 +21,7 @@ export interface Notification {
     [key: string]: any;
   };
   read: boolean;
+  isProcessed?: boolean; // join_request_received bildirimleri için işlenmiş mi kontrolü
   createdAt: string;
   updatedAt: string;
 }

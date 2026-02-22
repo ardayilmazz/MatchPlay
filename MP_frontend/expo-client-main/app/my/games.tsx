@@ -98,13 +98,21 @@ export default function MyGamesScreen() {
     return `${day}.${month}.${year} - ${hours}:${minutes}`;
   };
 
-  const renderGameCard = (game: any) => (
-    <View key={game._id} style={styles.gameCard}>
-      <View style={styles.gameHeader}>
-        <View style={styles.gameHeaderLeft}>
-          <Text style={styles.gameTitle}>{game.title}</Text>
-          <Text style={styles.gameType}>{game.gameType?.name || 'Oyun'}</Text>
-        </View>
+  const renderGameCard = (game: any) => {
+    const isFull = game.status === 'full' || game.neededPlayers === 0;
+    
+    return (
+      <View key={game._id} style={styles.gameCard}>
+        {isFull && (
+          <View style={styles.fullBadge}>
+            <Text style={styles.fullBadgeText}>Doldu!</Text>
+          </View>
+        )}
+        <View style={styles.gameHeader}>
+          <View style={styles.gameHeaderLeft}>
+            <Text style={styles.gameTitle}>{game.title}</Text>
+            <Text style={styles.gameType}>{game.gameType?.name || 'Oyun'}</Text>
+          </View>
         <View style={styles.gameActions}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -156,8 +164,9 @@ export default function MyGamesScreen() {
           <Text style={styles.feeText}>{game.feeAmount} TL (Kişi başı)</Text>
         </View>
       )}
-    </View>
-  );
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -227,6 +236,29 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
     ...shadows.md,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  fullBadge: {
+    position: 'absolute',
+    bottom: 18,
+    right: -25,
+    backgroundColor: colors.success[500],
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xs,
+    transform: [{ rotate: '-45deg' }],
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  fullBadgeText: {
+    color: colors.neutral[0],
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    letterSpacing: 0.5,
   },
   gameHeader: {
     flexDirection: 'row',

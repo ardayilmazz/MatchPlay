@@ -751,5 +751,40 @@ Hiçbir alan değiştirilmezse → 0 API isteği ✅
 
 **Değiştirilen Dosya:**
 - ✅ `MP_frontend/expo-client-main/app/my/games/[id].tsx` (Toplu kaydetme sistemi ile yeniden yazıldı)
+
+---
+
+## Profil ve Oyun Yönetimi Geliştirmeleri (21 Şubat 2025)
+
+### Oyun Oluşturma - Konum ve Zaman Zorunlu İşareti
+- "Konum ve Zaman" başlığına zorunlu alan göstergesi (*) eklendi
+- Step1GameStep.tsx güncellendi
+
+### Katıldığım Oyunlar Bölümü
+
+**Backend:**
+- `GET /api/games/sessions/joined`: Kullanıcının katıldığı oyunları getir (başkasının kurduğu, kabul edilmiş, henüz oynanmamış)
+- `acceptedPlayers` populate alanına `gender` ve `birthDate` eklendi
+
+**Frontend:**
+- Profil → Oyun Yönetimi altına "Katıldığım Oyunlar" menü öğesi eklendi
+- `/my/joined-games`: Katıldığı oyunlar listesi sayfası
+- `/my/joined-games/[id]`: Oyun detay sayfası (tüm bilgiler, katılımcılar, Oyundan Ayrıl butonu)
+- `PlayerProfileModal`: Ekranın %90'ını kaplayan oyuncu profili modal'ı (profil fotoğrafı, isim, soyisim, cinsiyet, yaş)
+- `fetchJoinedGameSessions()` servisi eklendi
+
+**Özellikler:**
+- Katılımcı ismine tıklanınca PlayerProfileModal açılıyor
+- Oyun kurucusu ve katılım sağlayanlar listeleniyor
+- "Oyundan Ayrıl" butonu ile oyundan çıkış (neededPlayers +1)
+
+### Planladığım Oyunlar - Katılan Oyuncu Profili
+- Oyun düzenle sayfasında Katılan Oyuncular bölümündeki isimlere tıklanınca PlayerProfileModal açılıyor
+- Profil fotoğrafı, isim, soyisim, cinsiyet, yaş bilgileri görüntüleniyor
+
+### Katılma İsteği Modal İyileştirmeleri
+- JoinRequestModal cinsiyet bilgisi ayrı detay kartı olarak eklendi
+- Modal boyutu ekranın %90'ına çıkarıldı (height: SCREEN_HEIGHT * 0.9)
+- Profil fotoğrafı 100x100'den 120x120'ye büyütüldü
  
  
