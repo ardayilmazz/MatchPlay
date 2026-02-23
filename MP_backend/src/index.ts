@@ -8,8 +8,9 @@ import gameRoutes from './routes/gameRoutes';
 import locationRoutes from './routes/locationRoutes';
 import joinRequestRoutes from './routes/joinRequestRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import cancellationVoteRoutes from './routes/cancellationVoteRoutes';
 import swaggerSpec from './config/swagger';
-import { updateGameStatuses } from './utils/gameStatusUpdater';
+import { updateGameStatuses, checkAndAutoCancelGames } from './utils/gameStatusUpdater';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/games', gameRoutes);
 app.use('/api/games', joinRequestRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/cancellation-votes', cancellationVoteRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Merhaba MatchPlay Backend! API dokümantasyonu için /api-docs adresini ziyaret edin.');
@@ -79,6 +81,11 @@ const server = app.listen(Number(PORT), '0.0.0.0', () => {
   updateGameStatuses(); // İlk çalıştırma
   setInterval(updateGameStatuses, 60000); // Her 1 dakikada bir
   console.log('Oyun durumu güncelleme job\'ı başlatıldı (1 dakika aralıklarla)');
+
+  // Otomatik iptal kontrolü job'ını başlat (her 5 dakikada bir)
+  checkAndAutoCancelGames(); // İlk çalıştırma
+  setInterval(checkAndAutoCancelGames, 5 * 60000); // Her 5 dakikada bir
+  console.log('Otomatik iptal kontrolü job\'ı başlatıldı (5 dakika aralıklarla)');
 });
 
 export default server;

@@ -51,6 +51,7 @@ export interface GameSessionDraft {
   teamCount?: number; // Takım sayısı
   skillLevel?: 'ilk_defa' | 'az_bilenler' | 'orta' | 'iyi' | 'profesyonel';
   hasEquipment?: boolean;
+  autoCancelIfNotFull?: boolean; // Oyuna 2 saat kala kontenjan tamamlanmazsa otomatik iptal et
   
   // Aşama 5: Oyuncu Kriterleri
   genderPreference?: 'herkes' | 'kizlar' | 'erkekler' | 'karma_dengeli';
@@ -395,6 +396,7 @@ export const gameService = {
         return {
           id: session._id,
           creatorId: session.creatorId,
+          title: session.title || '', // Lobi ismi
           sportId: session.gameTypeId,
           sportName: session.gameType?.name || 'Oyun',
           cityId: session.cityId || '',
@@ -448,6 +450,7 @@ export const gameService = {
           gender: creator.gender,
           birthDate: creator.birthDate,
         } : null,
+        title: session.title || '', // Lobi ismi
         sportId: session.gameTypeId,
         sportName: session.gameType?.name || 'Oyun',
         cityId: session.cityId || '',

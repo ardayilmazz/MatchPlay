@@ -54,6 +54,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
       skillLevel,
       hasEquipment,
       genderPreference,
+      autoCancelIfNotFull,
       status,
     } = req.body;
 
@@ -109,6 +110,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
           skillLevel,
           hasEquipment,
           genderPreference,
+          autoCancelIfNotFull,
           status,
         },
         { new: true, runValidators: true }
@@ -146,6 +148,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
         skillLevel,
         hasEquipment,
         genderPreference,
+        autoCancelIfNotFull,
         status: status || 'draft',
         currentPlayers: [userId], // Oluşturan kullanıcı otomatik katılır
         pendingRequests: [],
@@ -515,9 +518,9 @@ export const deleteGameSession = async (req: Request, res: Response) => {
       });
     }
 
-    const gameSession = await GameSession.findOneAndDelete({
+    const gameSession = await GameSession.findOne({
       _id: id,
-      creatorId: userId, // Sadece oluşturan kullanıcı silebilir
+      creatorId: userId,
     });
 
     if (!gameSession) {
@@ -527,7 +530,55 @@ export const deleteGameSession = async (req: Request, res: Response) => {
       });
     }
 
+    // Oyuna 3 saatten az kaldı mı kontrol et
+    const now = new Date();
+    if (!gameSession.startDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Oyun başlangıç tarihi bulunamadı.',
+      });
+    }
+    const startDate = new Date(gameSession.startDate);
+    const hoursUntilStart = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    // Katılımcı var mı kontrol et
+    const hasParticipants = gameSession.acceptedPlayers && gameSession.acceptedPlayers.length > 0;
+
+    // Eğer 3 saatten az kaldıysa ve katılımcı varsa, oylama gerekli
+    if (hoursUntilStart < 3 && hasParticipants) {
+      return res.status(400).json({
+        success: false,
+        message: 'Buluşmaya 3 saatten az bir süre kaldığı için katılımcıların izni olmadan buluşma iptal edilemez.',
+        requiresVote: true,
+        hoursUntilStart: Math.round(hoursUntilStart * 10) / 10,
+      });
+    }
+
+    // Oyunu sil
+    await GameSession.findByIdAndDelete(id);
+
     console.log('[deleteGameSession] Oyun silindi:', gameSession._id);
+
+    // Eğer katılımcı varsa, onlara bildirim gönder
+    if (hasParticipants) {
+      const Notification = (await import('../models/Notification')).default;
+      const notificationPromises = gameSession.acceptedPlayers.map((participantId: any) =>
+        Notification.create({
+          userId: participantId,
+          type: 'game_cancelled',
+          title: 'Oyun İptal Edildi',
+          message: `Katıldığınız "${gameSession.title}" oyunu iptal edildi.`,
+          data: {
+            gameSessionId: id,
+            reason: 'cancelled_by_creator',
+          },
+          read: false,
+        })
+      );
+
+      await Promise.all(notificationPromises);
+      console.log(`[deleteGameSession] ${gameSession.acceptedPlayers.length} katılımcıya bildirim gönderildi`);
+    }
 
     res.status(200).json({
       success: true,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Button from '@/components/Button';
@@ -8,8 +8,9 @@ interface TeamPlayersModalProps {
   visible: boolean;
   initialTotalPlayers: number;
   initialNeededPlayers: number;
+  initialAutoCancelIfNotFull?: boolean;
   onClose: () => void;
-  onSave: (data: { totalPlayers: number; neededPlayers: number }) => void;
+  onSave: (data: { totalPlayers: number; neededPlayers: number; autoCancelIfNotFull?: boolean }) => void;
 }
 
 const MIN_PLAYERS = 2;
@@ -19,11 +20,13 @@ export default function TeamPlayersModal({
   visible,
   initialTotalPlayers,
   initialNeededPlayers,
+  initialAutoCancelIfNotFull = false,
   onClose,
   onSave,
 }: TeamPlayersModalProps) {
   const [totalPlayers, setTotalPlayers] = useState(initialTotalPlayers || MIN_PLAYERS);
   const [neededPlayers, setNeededPlayers] = useState(initialNeededPlayers || 1);
+  const [autoCancelIfNotFull, setAutoCancelIfNotFull] = useState(initialAutoCancelIfNotFull);
 
   const changeTotalPlayers = (direction: 'increase' | 'decrease') => {
     if (direction === 'increase' && totalPlayers < MAX_PLAYERS) {
@@ -47,7 +50,7 @@ export default function TeamPlayersModal({
   };
 
   const handleSave = () => {
-    onSave({ totalPlayers, neededPlayers });
+    onSave({ totalPlayers, neededPlayers, autoCancelIfNotFull });
     onClose();
   };
 
@@ -121,6 +124,26 @@ export default function TeamPlayersModal({
               <Text style={styles.hint}>
                 Siz dahil {totalPlayers} kişi oynayacak, {neededPlayers} kişi daha lazım
               </Text>
+            </View>
+
+            {/* Otomatik İptal Seçeneği */}
+            <View style={styles.autoCancelSection}>
+              <View style={styles.autoCancelContent}>
+                <View style={styles.autoCancelTextContainer}>
+                  <Text style={styles.autoCancelTitle}>
+                    Buluşmaya yeteli sayıda katılım olmazsa otomatik iptal et
+                  </Text>
+                  <Text style={styles.autoCancelSubtitle}>
+                    Oyuna 2 saat kala kontenjan tamamlanmalıdır.
+                  </Text>
+                </View>
+                <Switch
+                  value={autoCancelIfNotFull}
+                  onValueChange={setAutoCancelIfNotFull}
+                  trackColor={{ false: colors.neutral[300], true: colors.primary[500] }}
+                  thumbColor={colors.neutral[0]}
+                />
+              </View>
             </View>
 
             <Button title="Kaydet" onPress={handleSave} style={styles.saveButton} />
@@ -200,6 +223,31 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  autoCancelSection: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.md,
+  },
+  autoCancelContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  autoCancelTextContainer: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  autoCancelTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  autoCancelSubtitle: {
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
   },
   saveButton: {
     marginTop: spacing.md,

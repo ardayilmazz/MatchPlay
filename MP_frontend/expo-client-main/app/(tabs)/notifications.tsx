@@ -121,7 +121,11 @@ export default function NotificationsScreen() {
     // Katılma isteği bildirimi ise modal aç
     if (notification.type === 'join_request_received' && notification.data.requestId) {
       setSelectedRequestId(notification.data.requestId);
-    } 
+    }
+    // İptal oylaması bildirimi ise oylama sayfasına git
+    else if (notification.type === 'cancellation_vote_request' && notification.data.voteId) {
+      router.push(`/vote/${notification.data.voteId}` as any);
+    }
     // Diğer bildirimler için oyun detayına git
     else if (notification.data.gameSessionId) {
       router.push(`/game/${notification.data.gameSessionId}` as any);
@@ -143,6 +147,10 @@ export default function NotificationsScreen() {
         return <XCircle size={20} color={colors.error[500]} />;
       case 'join_request_cancelled':
         return <XCircle size={20} color={colors.neutral[500]} />;
+      case 'cancellation_vote_request':
+        return <Bell size={20} color={colors.secondary[500]} />;
+      case 'cancellation_vote_result':
+        return <CheckCircle2 size={20} color={colors.primary[500]} />;
       case 'game_cancelled':
         return <XCircle size={20} color={colors.error[500]} />;
       case 'game_full':
@@ -166,6 +174,10 @@ export default function NotificationsScreen() {
         return colors.error[100];
       case 'join_request_cancelled':
         return colors.neutral[100];
+      case 'cancellation_vote_request':
+        return colors.secondary[100];
+      case 'cancellation_vote_result':
+        return colors.primary[100];
       case 'game_cancelled':
         return colors.error[100];
       case 'game_full':

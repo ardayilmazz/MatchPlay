@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Calendar, MapPin, Users, Clock, Award } from 'lucide-react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
-import { Game } from '@/types';
+import { Game } from '@/types/index';
 
 interface GameCardProps {
   game: Game;
@@ -53,7 +53,16 @@ export default function GameCard({ game, onPress }: GameCardProps) {
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.sportName}>{game.sportName}</Text>
+          <View style={styles.titleContainer}>
+            {game.title ? (
+              <>
+                <Text style={styles.lobbyTitle}>{game.title}</Text>
+                <Text style={styles.sportName}>{game.sportName}</Text>
+              </>
+            ) : (
+              <Text style={styles.sportName}>{game.sportName}</Text>
+            )}
+          </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
             <Text style={styles.statusText}>{getStatusText()}</Text>
           </View>
@@ -127,10 +136,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  sportName: {
+  titleContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  lobbyTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     color: colors.text.primary,
+  },
+  sportName: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.text.secondary,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,

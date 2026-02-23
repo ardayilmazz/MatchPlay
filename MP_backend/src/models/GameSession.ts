@@ -27,6 +27,7 @@ export interface IGameSession extends Document {
   teamAssignment?: 'manual' | 'random' | null;
   skillLevel?: 'ilk_defa' | 'az_bilenler' | 'orta' | 'iyi' | 'profesyonel';
   hasEquipment?: boolean;
+  autoCancelIfNotFull?: boolean; // Oyuna 2 saat kala kontenjan tamamlanmazsa otomatik iptal et
 
   // Aşama 5: Oyuncu Kriterleri
   genderPreference?: 'herkes' | 'kizlar' | 'erkekler' | 'karma_dengeli';
@@ -85,6 +86,7 @@ const GameSessionSchema: Schema = new Schema(
       enum: ['ilk_defa', 'az_bilenler', 'orta', 'iyi', 'profesyonel'],
     },
     hasEquipment: { type: Boolean },
+    autoCancelIfNotFull: { type: Boolean, default: false },
 
     // Aşama 5: Oyuncu Kriterleri
     genderPreference: {

@@ -11,13 +11,17 @@ export interface Notification {
     | 'game_cancelled'
     | 'game_full'
     | 'game_reminder'
-    | 'player_left';
+    | 'player_left'
+    | 'cancellation_vote_request'
+    | 'cancellation_vote_result';
   title: string;
   message: string;
   data: {
     gameSessionId?: string;
     requestId?: string;
     senderId?: string;
+    voteId?: string;
+    result?: string;
     [key: string]: any;
   };
   read: boolean;

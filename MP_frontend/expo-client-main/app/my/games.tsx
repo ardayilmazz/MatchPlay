@@ -19,11 +19,14 @@ import {
   Trash2,
   Edit,
   ChevronLeft,
+  UserPlus,
 } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { gameService, GameSessionDraft } from '@/services/gameService';
+import { cancellationVoteService } from '@/services/cancellationVoteService';
 import { useAuth } from '@/contexts/AuthContext';
 import { homeCacheService } from '@/utils/homeCache';
+import { API_URL } from '@/config/api';
 
 export default function MyGamesScreen() {
   const [games, setGames] = useState<any[]>([]);
@@ -54,38 +57,72 @@ export default function MyGamesScreen() {
     loadGames();
   };
 
-  const handleDeleteGame = (gameId: string, gameTitle: string) => {
-    Alert.alert(
-      'Oyunu İptal Et',
-      `"${gameTitle}" oyununu iptal etmek istediğinize emin misiniz?`,
-      [
-        { text: 'Vazgeç', style: 'cancel' },
-        {
-          text: 'İptal Et',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (!user?.token) return;
-              await gameService.deleteGameSession(gameId, user.token);
-              await loadGames();
-              
-              // Ana sayfa cache'ini temizle (oyun silindi)
-              await homeCacheService.clearCache();
-              console.log('[MyGames] Home cache cleared after deleting game');
-              
-              Alert.alert('Başarılı', 'Oyun iptal edildi');
-            } catch (error) {
-              console.error('Oyun silinirken hata:', error);
-              Alert.alert('Hata', 'Oyun iptal edilemedi');
-            }
-          },
+  const handleDeleteGame = async (gameId: string, gameTitle: string) => {
+    try {
+      if (!user?.token) return;
+
+      // Önce oyunu silmeyi dene
+      const response = await fetch(`${API_URL}/games/sessions/${gameId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
         },
-      ]
-    );
+      });
+
+      const data = await response.json();
+
+      // Eğer oylama gerekiyorsa
+      if (!data.success && data.requiresVote) {
+        Alert.alert(
+          'Oyunu İptal Et',
+          `Buluşmaya 3 saatten az bir süre kaldığı için katılımcıların izni olmadan buluşma iptal edilemez.`,
+          [
+            { text: 'Vazgeç', style: 'cancel' },
+            {
+              text: 'İptal için Oyla',
+              style: 'default',
+              onPress: async () => {
+                try {
+                  await cancellationVoteService.initiateCancellationVote(gameId, user!.token!);
+                  Alert.alert(
+                    'Oylama Başlatıldı',
+                    'Katılımcılara iptal oylaması bildirimi gönderildi. Tüm katılımcılar onaylarsa oyun iptal edilecek.'
+                  );
+                  await loadGames();
+                } catch (error: any) {
+                  Alert.alert('Hata', error.message || 'Oylama başlatılamadı');
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Oylama gerekmiyorsa veya başarılıysa
+      if (data.success) {
+        await loadGames();
+        await homeCacheService.clearCache();
+        console.log('[MyGames] Home cache cleared after deleting game');
+        Alert.alert('Başarılı', 'Oyun iptal edildi');
+      } else {
+        throw new Error(data.message || 'Oyun iptal edilemedi');
+      }
+    } catch (error: any) {
+      console.error('Oyun silinirken hata:', error);
+      Alert.alert('Hata', error.message || 'Oyun iptal edilemedi');
+    }
   };
 
   const handleEditGame = (game: any) => {
     router.push(`/my/games/${game._id}` as any);
+  };
+
+  const handleViewRequests = (gameId: string) => {
+    router.push({
+      pathname: `/my/games/${gameId}/requests` as any,
+      params: { from: 'profile' }
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -114,6 +151,12 @@ export default function MyGamesScreen() {
             <Text style={styles.gameType}>{game.gameType?.name || 'Oyun'}</Text>
           </View>
         <View style={styles.gameActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleViewRequests(game._id)}
+          >
+            <UserPlus size={20} color={colors.secondary[500]} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleEditGame(game)}

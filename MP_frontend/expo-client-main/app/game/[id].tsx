@@ -190,7 +190,10 @@ export default function GameDetailsScreen() {
   };
 
   const handleManageRequests = () => {
-    router.push(`/game/${id}/requests` as any);
+    router.push({
+      pathname: `/my/games/${id}/requests` as any,
+      params: { from: 'notification' }
+    });
   };
 
   const formatDate = (dateString: string) => {

@@ -65,6 +65,7 @@ export type GameSkillLevel = 'everyone' | 'competitive' | 'beginner' | 'intermed
 export interface Game {
   id: string;
   creatorId: string;
+  title?: string; // Lobi ismi (oyun başlığı)
   sportId: string;
   sportName: string;
   cityId: string;

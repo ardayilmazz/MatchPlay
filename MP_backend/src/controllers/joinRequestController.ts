@@ -622,3 +622,56 @@ export const cancelJoinRequest = async (req: Request, res: Response) => {
     });
   }
 };
+
+// GET /api/games/requests/my - Kullanıcının gönderdiği tüm katılma isteklerini getir
+export const getUserRequests = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+
+    console.log('[getUserRequests] Kullanıcı istekleri getiriliyor:', { userId });
+
+    const joinRequests = await JoinRequest.find({ userId })
+      .populate({
+        path: 'gameSessionId',
+        populate: [
+          { path: 'gameTypeId', select: 'name' },
+          { path: 'creatorId', select: 'firstName lastName profilePhoto' },
+        ],
+      })
+      .sort({ createdAt: -1 });
+
+    // İstekleri frontend formatına dönüştür
+    const formattedRequests = joinRequests.map((request: any) => {
+      const game = request.gameSessionId;
+      return {
+        id: request._id.toString(),
+        gameId: game?._id?.toString() || '',
+        userId: request.userId.toString(),
+        message: request.message || '',
+        status: request.status,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+        game: game ? {
+          id: game._id.toString(),
+          sportName: game.gameTypeId?.name || 'Oyun',
+          title: game.title || '',
+          startTime: game.startDate,
+          venueName: game.venueName || '',
+          districtName: game.districtName || '',
+          cityName: game.cityName || '',
+        } : null,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: formattedRequests,
+    });
+  } catch (error: any) {
+    console.error('[getUserRequests] Hata:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'İstekler getirilirken bir hata oluştu.',
+    });
+  }
+};

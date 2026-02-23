@@ -7,6 +7,7 @@ import {
   cancelJoinRequest,
   getGameRequests,
   getMyRequestForGame,
+  getUserRequests,
   leaveGame,
 } from '../controllers/joinRequestController';
 
@@ -163,5 +164,19 @@ router.post('/requests/:id/cancel', protect, cancelJoinRequest);
  *         description: Oyundan ayrıldı
  */
 router.post('/sessions/:id/leave', protect, leaveGame);
+
+/**
+ * @swagger
+ * /api/games/requests/my:
+ *   get:
+ *     summary: Kullanıcının gönderdiği tüm katılma isteklerini getir
+ *     tags: [Join Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: İstekler listesi
+ */
+router.get('/requests/my', protect, getUserRequests);
 
 export default router;

@@ -208,4 +208,28 @@ export const gameRequestService = {
       throw error;
     }
   },
+
+  // Kullanıcının gönderdiği tüm katılma isteklerini getir
+  getUserRequests: async (token: string): Promise<GameRequest[]> => {
+    try {
+      console.log('[gameRequestService] Kullanıcı istekleri getiriliyor');
+      
+      const response = await fetch(`${API_URL}/games/requests/my`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'İstekler getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[gameRequestService] getUserRequests error:', error);
+      throw error;
+    }
+  },
 };

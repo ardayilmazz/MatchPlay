@@ -244,6 +244,7 @@ export default function CreateScreen() {
             neededPlayers={draft.neededPlayers || draft.gameType.minPlayers - 1}
             skillLevel={draft.skillLevel || 'orta'}
             genderPreference={draft.genderPreference || 'herkes'}
+            autoCancelIfNotFull={draft.autoCancelIfNotFull || false}
             onPlayersUpdate={async (data) => {
               await updateDraft(data);
             }}

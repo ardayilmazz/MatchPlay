@@ -11,7 +11,7 @@ import {
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Clock, CheckCircle2, XCircle, Calendar, MapPin } from 'lucide-react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
-import { GameRequest } from '@/types';
+import { GameRequest } from '@/types/index';
 import { gameRequestService } from '@/services/gameRequestService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
@@ -31,10 +31,10 @@ export default function MyRequestsScreen() {
   }, [user]);
 
   const loadRequests = async () => {
-    if (!user) return;
+    if (!user?.token) return;
 
     try {
-      const data = await gameRequestService.getUserRequests(user.id);
+      const data = await gameRequestService.getUserRequests(user.token);
       setRequests(data);
     } catch (error) {
       console.error('Error loading requests:', error);
@@ -50,11 +50,11 @@ export default function MyRequestsScreen() {
   };
 
   const handleCancelRequest = async (requestId: string) => {
-    if (!user) return;
+    if (!user?.token) return;
 
     setActionLoading(requestId);
     try {
-      await gameRequestService.cancelJoinRequest(requestId, user.id);
+      await gameRequestService.cancelJoinRequest(requestId, user.token);
       await loadRequests();
     } catch (error: any) {
       console.error('Error cancelling request:', error);

@@ -46,6 +46,7 @@ function RootLayoutNav() {
         <Stack.Screen name="auth" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="vote/[id]" />
         <Stack.Screen name="+not-found" />
       </Stack>
   );

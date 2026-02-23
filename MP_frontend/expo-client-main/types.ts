@@ -31,6 +31,7 @@ export interface Game {
     gender?: string;
     birthDate?: string;
   };
+  title?: string; // Lobi ismi (oyun başlığı)
   sportId: string;
   sportName: string;
   cityId: string;

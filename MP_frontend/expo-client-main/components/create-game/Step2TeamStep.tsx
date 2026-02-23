@@ -12,7 +12,8 @@ interface Step2TeamStepProps {
   neededPlayers: number;
   skillLevel: 'ilk_defa' | 'az_bilenler' | 'orta' | 'iyi' | 'profesyonel';
   genderPreference: 'herkes' | 'kizlar' | 'erkekler' | 'karma_dengeli';
-  onPlayersUpdate: (data: { totalPlayers: number; neededPlayers: number }) => void;
+  autoCancelIfNotFull?: boolean;
+  onPlayersUpdate: (data: { totalPlayers: number; neededPlayers: number; autoCancelIfNotFull?: boolean }) => void;
   onSkillLevelUpdate: (skillLevel: 'ilk_defa' | 'az_bilenler' | 'orta' | 'iyi' | 'profesyonel') => void;
   onGenderUpdate: (genderPreference: 'herkes' | 'kizlar' | 'erkekler' | 'karma_dengeli') => void;
   onNext: () => void;
@@ -38,6 +39,7 @@ export default function Step2TeamStep({
   neededPlayers,
   skillLevel,
   genderPreference,
+  autoCancelIfNotFull = false,
   onPlayersUpdate,
   onSkillLevelUpdate,
   onGenderUpdate,
@@ -118,6 +120,7 @@ export default function Step2TeamStep({
         visible={showPlayersModal}
         initialTotalPlayers={totalPlayers}
         initialNeededPlayers={neededPlayers}
+        initialAutoCancelIfNotFull={autoCancelIfNotFull}
         onClose={() => setShowPlayersModal(false)}
         onSave={onPlayersUpdate}
       />
