@@ -1,48 +1,128 @@
 import { WaitlistEntry } from '@/types/index';
-
-// NOT: Waitlist API'si henüz backend'de yok
-// Bu özellik gelecekte eklenecek
+import { API_URL } from '@/config/api';
 
 export const waitlistService = {
-  addToWaitlist: async (gameId: string, userId: string): Promise<WaitlistEntry> => {
-    console.log(`[waitlistService] Waitlist'e ekleniyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-    const newEntry: WaitlistEntry = {
-      id: Math.random().toString(),
-      gameId,
-      userId,
-      position: 1,
-      status: 'waiting',
-      createdAt: new Date().toISOString(),
-    };
-    return newEntry;
+  addToWaitlist: async (gameId: string, token: string): Promise<WaitlistEntry> => {
+    try {
+      console.log(`[waitlistService] Waitlist'e ekleniyor - gameId: ${gameId}`);
+
+      const response = await fetch(`${API_URL}/waitlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ gameSessionId: gameId }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bekleme listesine eklenemedi');
+      }
+
+      return {
+        id: data.data._id.toString(),
+        gameId: data.data.gameSessionId.toString(),
+        userId: data.data.userId.toString(),
+        position: data.data.position,
+        status: data.data.status,
+        createdAt: data.data.createdAt,
+      };
+    } catch (error: any) {
+      console.error('[waitlistService] addToWaitlist error:', error);
+      throw error;
+    }
   },
 
-  removeFromWaitlist: async (waitlistId: string, userId: string): Promise<void> => {
-    console.log(`[waitlistService] Waitlist'ten çıkarılıyor - waitlistId: ${waitlistId}`);
-    // TODO: Backend API eklenecek
+  removeFromWaitlist: async (waitlistId: string, token: string): Promise<void> => {
+    try {
+      console.log(`[waitlistService] Waitlist'ten çıkarılıyor - waitlistId: ${waitlistId}`);
+
+      const response = await fetch(`${API_URL}/waitlist/${waitlistId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bekleme listesinden çıkarılamadı');
+      }
+    } catch (error: any) {
+      console.error('[waitlistService] removeFromWaitlist error:', error);
+      throw error;
+    }
   },
 
-  getUserWaitlist: async (userId: string): Promise<WaitlistEntry[]> => {
-    console.log(`[waitlistService] Kullanıcı waitlist'i getiriliyor - userId: ${userId}`);
-    // TODO: Backend API eklenecek
-    return [];
+  getUserWaitlist: async (token: string): Promise<WaitlistEntry[]> => {
+    try {
+      console.log(`[waitlistService] Kullanıcı waitlist'i getiriliyor`);
+
+      const response = await fetch(`${API_URL}/waitlist/my`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bekleme listesi getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[waitlistService] getUserWaitlist error:', error);
+      throw error;
+    }
   },
 
-  getGameWaitlist: async (gameId: string): Promise<WaitlistEntry[]> => {
-    console.log(`[waitlistService] Oyun waitlist'i getiriliyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-    return [];
+  getGameWaitlist: async (gameId: string, token: string): Promise<WaitlistEntry[]> => {
+    try {
+      console.log(`[waitlistService] Oyun waitlist'i getiriliyor - gameId: ${gameId}`);
+
+      const response = await fetch(`${API_URL}/waitlist/game/${gameId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bekleme listesi getirilemedi');
+      }
+
+      return data.data;
+    } catch (error: any) {
+      console.error('[waitlistService] getGameWaitlist error:', error);
+      throw error;
+    }
   },
 
-  inviteNextFromWaitlist: async (gameId: string): Promise<void> => {
-    console.log(`[waitlistService] Waitlist'ten davet gönderiliyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-  },
+  getWaitlistEntry: async (gameId: string, token: string): Promise<WaitlistEntry | null> => {
+    try {
+      console.log(`[waitlistService] Waitlist entry kontrol ediliyor - gameId: ${gameId}`);
 
-  getWaitlistEntry: async (gameId: string, userId: string): Promise<WaitlistEntry | null> => {
-    console.log(`[waitlistService] Waitlist entry kontrol ediliyor - gameId: ${gameId}`);
-    // TODO: Backend API eklenecek
-    return null;
+      const response = await fetch(`${API_URL}/waitlist/game/${gameId}/my`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Bekleme listesi kaydı getirilemedi');
+      }
+
+      return data.data || null;
+    } catch (error: any) {
+      console.error('[waitlistService] getWaitlistEntry error:', error);
+      return null;
+    }
   },
 };

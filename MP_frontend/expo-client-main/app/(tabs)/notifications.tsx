@@ -104,6 +104,20 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    // Bekleme listesi bildirimleri için oyun detay sayfasına git
+    if (notification.type === 'waitlist_slot_available' && notification.data?.gameSessionId) {
+      await handleMarkAsRead(notification._id);
+      router.push(`/game/${notification.data.gameSessionId}` as any);
+      return;
+    }
+
+    // Bekleme listesine katılım bildirimi için oyun detay sayfasına git
+    if (notification.type === 'waitlist_joined' && notification.data?.gameSessionId) {
+      await handleMarkAsRead(notification._id);
+      router.push(`/game/${notification.data.gameSessionId}` as any);
+      return;
+    }
+
     // İşlenmiş katılma istekleri için detay açma
     const isProcessed = 
       notification.type === 'join_request_accepted' || 
@@ -159,6 +173,10 @@ export default function NotificationsScreen() {
         return <Calendar size={20} color={colors.secondary[500]} />;
       case 'player_left':
         return <XCircle size={20} color={colors.secondary[500]} />;
+      case 'waitlist_joined':
+        return <UserPlus size={20} color={colors.secondary[500]} />;
+      case 'waitlist_slot_available':
+        return <CheckCircle2 size={20} color={colors.success[500]} />;
       default:
         return <Bell size={20} color={colors.neutral[500]} />;
     }
@@ -186,6 +204,10 @@ export default function NotificationsScreen() {
         return colors.secondary[100];
       case 'player_left':
         return colors.secondary[100];
+      case 'waitlist_joined':
+        return colors.secondary[100];
+      case 'waitlist_slot_available':
+        return colors.success[100];
       default:
         return colors.neutral[100];
     }

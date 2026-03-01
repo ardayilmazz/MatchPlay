@@ -13,7 +13,9 @@ export interface Notification {
     | 'game_reminder'
     | 'player_left'
     | 'cancellation_vote_request'
-    | 'cancellation_vote_result';
+    | 'cancellation_vote_result'
+    | 'waitlist_joined'
+    | 'waitlist_slot_available';
   title: string;
   message: string;
   data: {

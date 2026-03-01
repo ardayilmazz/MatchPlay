@@ -31,10 +31,10 @@ export default function MyWaitlistScreen() {
   }, [user]);
 
   const loadWaitlist = async () => {
-    if (!user) return;
+    if (!user?.token) return;
 
     try {
-      const data = await waitlistService.getUserWaitlist(user.id);
+      const data = await waitlistService.getUserWaitlist(user.token);
       setWaitlist(data);
     } catch (error) {
       console.error('Error loading waitlist:', error);
@@ -50,11 +50,11 @@ export default function MyWaitlistScreen() {
   };
 
   const handleRemoveFromWaitlist = async (waitlistId: string) => {
-    if (!user) return;
+    if (!user?.token) return;
 
     setActionLoading(waitlistId);
     try {
-      await waitlistService.removeFromWaitlist(waitlistId, user.id);
+      await waitlistService.removeFromWaitlist(waitlistId, user.token);
       await loadWaitlist();
     } catch (error: any) {
       console.error('Error removing from waitlist:', error);
@@ -84,6 +84,9 @@ export default function MyWaitlistScreen() {
       </View>
 
       <Pressable onPress={() => item.game && handleGamePress(item.game.id)} style={styles.gameInfo}>
+        {item.game?.title && (
+          <Text style={styles.gameTitle}>{item.game.title}</Text>
+        )}
         <Text style={styles.sportName}>{item.game?.sportName}</Text>
         <View style={styles.gameDetails}>
           <View style={styles.detailRow}>
@@ -237,10 +240,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingRight: 60,
   },
+  gameTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
   sportName: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.semibold,
-    color: colors.text.primary,
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
   gameDetails: {

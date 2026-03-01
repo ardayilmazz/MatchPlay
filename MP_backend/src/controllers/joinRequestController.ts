@@ -190,9 +190,11 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
 
     // Oyunda yer var mı? (acceptedPlayers + creator = totalPlayers)
     const acceptedPlayerCount = gameSession.acceptedPlayers?.length || 0;
-    const neededPlayers = gameSession.neededPlayers || 0;
+    const sessionTotalPlayers = gameSession.totalPlayers || 0;
+    const currentPlayers = acceptedPlayerCount + 1; // +1 = creator
     
-    if (acceptedPlayerCount >= neededPlayers) {
+    // Oyun dolmuş mu kontrol et
+    if (currentPlayers >= sessionTotalPlayers) {
       return res.status(400).json({
         success: false,
         message: 'Oyunda yer kalmadı.',
@@ -410,8 +412,11 @@ export const leaveGame = async (req: Request, res: Response) => {
     const totalPlayers = updatedSession.totalPlayers || 0;
     const currentNeededPlayers = Math.max(0, totalPlayers - (totalAcceptedPlayers + 1)); // +1 = creator
     
+    // Oyunun önceki durumunu kaydet (bekleme listesi bildirimi için)
+    const wasFull = updatedSession.status === 'full';
+    
     // neededPlayers'ı güncelle ve oyun durumunu kontrol et
-    if (updatedSession.status === 'full') {
+    if (wasFull) {
       await GameSession.findByIdAndUpdate(gameSessionId, { 
         neededPlayers: currentNeededPlayers,
         status: 'open' 
@@ -443,6 +448,37 @@ export const leaveGame = async (req: Request, res: Response) => {
       },
       read: false,
     });
+
+    // Eğer oyun dolu durumundan açık durumuna geçtiyse, bekleme listesindeki kullanıcılara bildirim gönder
+    if (wasFull) {
+      const Waitlist = require('../models/Waitlist').default;
+      const waitlistEntries = await Waitlist.find({
+        gameSessionId,
+        status: 'waiting',
+      }).populate('userId', '_id');
+
+      console.log(`[leaveGame] Bekleme listesinde ${waitlistEntries.length} kullanıcı bulundu`);
+
+      // Bekleme listesindeki kullanıcılara bildirim gönder
+      if (waitlistEntries.length > 0) {
+        const notificationPromises = waitlistEntries.map((entry: any) => {
+          return Notification.create({
+            userId: entry.userId._id,
+            type: 'waitlist_slot_available',
+            title: 'Kontenjan Açıldı',
+            message: `"${gameSession.title}" oyununda kontenjan açıldı. Hemen katılma isteği gönderebilirsiniz!`,
+            data: {
+              gameSessionId: String(gameSessionId),
+              waitlistId: String(entry._id),
+            },
+            read: false,
+          });
+        });
+
+        await Promise.all(notificationPromises);
+        console.log(`[leaveGame] ${waitlistEntries.length} bekleme listesi kullanıcısına bildirim gönderildi`);
+      }
+    }
 
     console.log('[leaveGame] Oyuncu oyundan ayrıldı:', userId);
 

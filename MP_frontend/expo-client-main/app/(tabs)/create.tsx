@@ -126,7 +126,19 @@ export default function CreateScreen() {
 
     try {
       setIsPublishing(true);
-      await createGameSession(user.token, draft);
+      
+      // Eğer başlık yoksa otomatik oluştur
+      let finalDraft = { ...draft };
+      if (!finalDraft.title && finalDraft.gameType && finalDraft.districtName && finalDraft.startDate) {
+        const autoTitle = generateGameTitle(
+          finalDraft.gameType.name,
+          finalDraft.districtName,
+          new Date(finalDraft.startDate)
+        );
+        finalDraft.title = autoTitle;
+      }
+      
+      await createGameSession(user.token, finalDraft);
       await clearDraftLocally();
       
       // Ana sayfa cache'ini temizle (yeni oyun eklendi)

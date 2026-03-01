@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import GameType from '../models/GameType';
 import GameSession from '../models/GameSession';
 import mongoose from 'mongoose';
+import { generateGameTitle } from '../utils/gameTitleGenerator';
 
 // GET /api/games/types - Tüm oyun tiplerini getir
 export const getGameTypes = async (req: Request, res: Response) => {
@@ -65,10 +66,11 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
       status,
     });
 
-    // GameType kontrolü
+    // GameType kontrolü ve otomatik başlık oluşturma
+    let gameType: any = null;
     if (gameTypeId) {
       console.log('[createOrUpdateGameSession] gameTypeId kontrolü:', gameTypeId);
-      const gameType = await GameType.findById(gameTypeId);
+      gameType = await GameType.findById(gameTypeId);
       if (!gameType) {
         console.error('[createOrUpdateGameSession] Geçersiz gameTypeId:', gameTypeId);
         return res.status(404).json({
@@ -77,6 +79,21 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
         });
       }
       console.log('[createOrUpdateGameSession] GameType bulundu:', gameType.name);
+    }
+
+    // Eğer başlık yoksa ve gerekli bilgiler varsa otomatik oluştur
+    let finalTitle = title;
+    if (!finalTitle || finalTitle.trim() === '' || finalTitle === 'Yeni Oyun') {
+      if (gameType && districtName && startDate) {
+        finalTitle = generateGameTitle(
+          gameType.name,
+          districtName,
+          new Date(startDate)
+        );
+        console.log('[createOrUpdateGameSession] Otomatik başlık oluşturuldu:', finalTitle);
+      } else {
+        finalTitle = 'Yeni Oyun';
+      }
     }
 
     let gameSession;
@@ -91,7 +108,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
         },
         {
           gameTypeId,
-          title,
+          title: finalTitle,
           description,
           tags,
           cityId,
@@ -126,10 +143,15 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
       console.log('[createOrUpdateGameSession] Oyun güncellendi:', gameSession._id);
     } else {
       // Yeni draft oluştur
+      // Oyun oluşturulurken status kontrolü yap
+      const acceptedPlayerCount = 0; // Yeni oyun, henüz kimse katılmamış
+      const currentPlayers = acceptedPlayerCount + 1; // +1 = creator
+      const initialStatus = (currentPlayers >= (totalPlayers || 2)) ? 'full' : (status || 'draft');
+      
       gameSession = await GameSession.create({
         creatorId: userId,
         gameTypeId,
-        title: title || 'Yeni Oyun',
+        title: finalTitle,
         description,
         tags,
         cityId,
@@ -149,7 +171,7 @@ export const createOrUpdateGameSession = async (req: Request, res: Response) => 
         hasEquipment,
         genderPreference,
         autoCancelIfNotFull,
-        status: status || 'draft',
+        status: initialStatus,
         currentPlayers: [userId], // Oluşturan kullanıcı otomatik katılır
         pendingRequests: [],
       });

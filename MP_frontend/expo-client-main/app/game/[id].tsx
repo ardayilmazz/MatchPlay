@@ -81,7 +81,7 @@ export default function GameDetailsScreen() {
       const request = await gameRequestService.getRequestForGame(id, user.token);
       setUserRequest(request);
 
-      const waitlist = await waitlistService.getWaitlistEntry(id, user.id);
+      const waitlist = await waitlistService.getWaitlistEntry(id, user.token);
       setWaitlistEntry(waitlist);
 
       // Kullanıcı oyuna katılmış mı kontrol et (game.acceptedPlayers)
@@ -113,13 +113,14 @@ export default function GameDetailsScreen() {
   };
 
   const handleJoinWaitlist = async () => {
-    if (!user || !game) return;
+    if (!user || !game || !user.token) return;
 
     setActionLoading(true);
     try {
-      await waitlistService.addToWaitlist(game.id, user.id);
+      await waitlistService.addToWaitlist(game.id, user.token);
       Alert.alert('Başarılı', 'Bekleme listesine eklendiniz');
       await checkUserStatus();
+      await loadGameDetails(); // Oyun bilgilerini yenile
     } catch (error: any) {
       Alert.alert('Hata', error.message || 'Bekleme listesine eklenirken hata oluştu');
     } finally {
@@ -175,13 +176,14 @@ export default function GameDetailsScreen() {
   };
 
   const handleRemoveFromWaitlist = async () => {
-    if (!waitlistEntry) return;
+    if (!waitlistEntry || !user?.token) return;
 
     setActionLoading(true);
     try {
-      await waitlistService.removeFromWaitlist(waitlistEntry.id, user!.id);
+      await waitlistService.removeFromWaitlist(waitlistEntry.id, user.token);
       Alert.alert('Başarılı', 'Bekleme listesinden çıkarıldınız');
       setWaitlistEntry(null);
+      await loadGameDetails(); // Oyun bilgilerini yenile
     } catch (error: any) {
       Alert.alert('Hata', error.message || 'Bekleme listesinden çıkarılırken hata oluştu');
     } finally {
@@ -276,6 +278,33 @@ export default function GameDetailsScreen() {
       }
     }
 
+    // Bekleme listesindeyse ve oyun açıksa, hem listeden çık hem de katılma isteği gönder butonları göster
+    if (waitlistEntry && game.status === 'open') {
+      return (
+        <View style={styles.actionContainer}>
+          <View style={styles.waitlistInfo}>
+            <Text style={styles.waitlistText}>
+              Bekleme Listesi - Sıra: {waitlistEntry.position}
+            </Text>
+          </View>
+          <Button
+            title="Katılma İsteği Gönder"
+            onPress={handleSendRequest}
+            variant="primary"
+            loading={actionLoading}
+            leftIcon={<UserPlus size={20} color={colors.neutral[0]} />}
+          />
+          <Button
+            title="Listeden Çık"
+            onPress={handleRemoveFromWaitlist}
+            variant="secondary"
+            loading={actionLoading}
+          />
+        </View>
+      );
+    }
+
+    // Bekleme listesindeyse ama oyun hala doluysa
     if (waitlistEntry) {
       return (
         <View style={styles.actionContainer}>
