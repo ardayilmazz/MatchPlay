@@ -41,6 +41,83 @@ export const updateGameStatuses = async () => {
       { gameStatus: 'completed' }
     );
 
+    // 3. Yeni bitmiş oyunlar için oylama bildirimi gönder
+    if (completedGames.modifiedCount > 0) {
+      // Son 5 dakika içinde bitmiş oyunları bul (tekrar bildirim göndermemek için)
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+      
+      const newlyCompletedGames = await GameSession.find({
+        gameStatus: 'completed',
+        startDate: { $exists: true, $ne: null },
+        estimatedDuration: { $exists: true, $ne: null },
+        $expr: {
+          $and: [
+            {
+              $lte: [
+                { $add: ['$startDate', { $multiply: ['$estimatedDuration', 60000] }] },
+                now,
+              ],
+            },
+            {
+              $gte: [
+                { $add: ['$startDate', { $multiply: ['$estimatedDuration', 60000] }] },
+                fiveMinutesAgo,
+              ],
+            },
+          ],
+        },
+      }).populate('creatorId', '_id').populate('acceptedPlayers', '_id');
+
+      const Rating = (await import('../models/Rating')).default;
+
+      for (const game of newlyCompletedGames) {
+        if (!game.startDate || !game.estimatedDuration) continue;
+
+        const allParticipants = [
+          game.creatorId,
+          ...(game.acceptedPlayers || []),
+        ].map((p: any) => p._id || p);
+
+        // Her katılımcıya bildirim gönder
+        for (const participantId of allParticipants) {
+          // Bu kullanıcının bu oyun için daha önce bildirim alıp almadığını kontrol et
+          const existingNotification = await Notification.findOne({
+            userId: participantId,
+            type: 'rating_pending',
+            'data.gameSessionId': String(game._id),
+          });
+
+          if (!existingNotification) {
+            // Bu oyunda oy verebileceği kişileri kontrol et
+            const ratedUsers = await Rating.find({
+              gameSessionId: game._id,
+              raterId: participantId,
+            }).distinct('ratedId');
+
+            const usersToRate = allParticipants.filter(
+              (pId: any) =>
+                String(pId) !== String(participantId) &&
+                !ratedUsers.some((ratedId: any) => String(ratedId) === String(pId))
+            );
+
+            // Eğer oy verebileceği kişi varsa bildirim gönder
+            if (usersToRate.length > 0) {
+              await Notification.create({
+                userId: participantId,
+                type: 'rating_pending',
+                title: 'Oyun Sonrası Oylama',
+                message: `"${game.title}" oyunu sona erdi. Katılımcıları oylamak ister misiniz?`,
+                data: {
+                  gameSessionId: String(game._id),
+                },
+                read: false,
+              });
+            }
+          }
+        }
+      }
+    }
+
     if (inProgressGames.modifiedCount > 0 || completedGames.modifiedCount > 0) {
       console.log(
         `[gameStatusUpdater] ${inProgressGames.modifiedCount} oyun "in_progress", ${completedGames.modifiedCount} oyun "completed" olarak güncellendi`

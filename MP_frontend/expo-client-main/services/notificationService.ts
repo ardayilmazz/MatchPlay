@@ -15,7 +15,8 @@ export interface Notification {
     | 'cancellation_vote_request'
     | 'cancellation_vote_result'
     | 'waitlist_joined'
-    | 'waitlist_slot_available';
+    | 'waitlist_slot_available'
+    | 'rating_pending';
   title: string;
   message: string;
   data: {

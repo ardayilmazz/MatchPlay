@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Edit, Clock, Users, ChevronRight, Settings, Calendar, UserCheck, CheckCircle } from 'lucide-react-native';
+import { Edit, Clock, Users, ChevronRight, Settings, Calendar, UserCheck, CheckCircle, Star, AlertTriangle } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { router, useFocusEffect } from 'expo-router';
@@ -96,6 +96,17 @@ export default function ProfileScreen() {
             <Edit size={20} color={colors.primary[500]} />
             <Text style={styles.editButtonText}>Profili Düzenle</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/my/ratings' as any)}
+          >
+            <View style={styles.menuItemLeft}>
+              <Star size={20} color={colors.primary[500]} />
+              <Text style={styles.menuItemText}>Kullanıcı Yorumları</Text>
+            </View>
+            <ChevronRight size={20} color={colors.text.tertiary} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.menuSection}>
@@ -152,6 +163,17 @@ export default function ProfileScreen() {
             <View style={styles.menuItemLeft}>
               <CheckCircle size={20} color={colors.primary[500]} />
               <Text style={styles.menuItemText}>Geçmiş Oyunlar</Text>
+            </View>
+            <ChevronRight size={20} color={colors.text.tertiary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/my/complaints' as any)}
+          >
+            <View style={styles.menuItemLeft}>
+              <AlertTriangle size={20} color={colors.primary[500]} />
+              <Text style={styles.menuItemText}>Şikayetlerim</Text>
             </View>
             <ChevronRight size={20} color={colors.text.tertiary} />
           </TouchableOpacity>

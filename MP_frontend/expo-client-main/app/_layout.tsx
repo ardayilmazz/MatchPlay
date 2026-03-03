@@ -5,6 +5,7 @@ import { View, Text } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import RatingManager from '@/components/RatingManager';
 
 // Bu yeni bileşen, AuthProvider'ın içinde olduğu için useAuth hook'unu kullanabilir.
 function RootLayoutNav() {
@@ -41,14 +42,19 @@ function RootLayoutNav() {
   }
 
   return (
+    <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="auth" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="vote/[id]" />
+        <Stack.Screen name="complaint" />
+        <Stack.Screen name="rating/[gameId]" />
         <Stack.Screen name="+not-found" />
       </Stack>
+      <RatingManager />
+    </>
   );
 }
 

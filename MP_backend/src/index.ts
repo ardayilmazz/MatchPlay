@@ -10,6 +10,8 @@ import joinRequestRoutes from './routes/joinRequestRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import cancellationVoteRoutes from './routes/cancellationVoteRoutes';
 import waitlistRoutes from './routes/waitlistRoutes';
+import ratingRoutes from './routes/ratingRoutes';
+import complaintRoutes from './routes/complaintRoutes';
 import swaggerSpec from './config/swagger';
 import { updateGameStatuses, checkAndAutoCancelGames } from './utils/gameStatusUpdater';
 
@@ -66,6 +68,8 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/cancellation-votes', cancellationVoteRoutes);
 app.use('/api/waitlist', waitlistRoutes);
+app.use('/api/ratings', ratingRoutes);
+app.use('/api/complaints', complaintRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Merhaba MatchPlay Backend! API dokümantasyonu için /api-docs adresini ziyaret edin.');

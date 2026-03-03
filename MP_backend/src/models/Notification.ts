@@ -12,7 +12,8 @@ export type NotificationType =
   | 'cancellation_vote_request' // Katılımcılara: Oyunun iptal edilmesi için oy kullanın
   | 'cancellation_vote_result' // Tüm oyunculara: Oylama sonucu (iptal edildi veya devam ediyor)
   | 'waitlist_joined'           // Oyun kurucusuna: X bekleme listesine katıldı
-  | 'waitlist_slot_available';  // Bekleme listesindeki kullanıcılara: Kontenjan açıldı
+  | 'waitlist_slot_available'  // Bekleme listesindeki kullanıcılara: Kontenjan açıldı
+  | 'rating_pending';           // Kullanıcıya: Oyun sonrası oylama yapabilirsiniz
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId; // Bildirimi alacak kullanıcı
@@ -53,6 +54,7 @@ const NotificationSchema: Schema = new Schema(
         'cancellation_vote_result',
         'waitlist_joined',
         'waitlist_slot_available',
+        'rating_pending',
       ],
       required: true,
     },

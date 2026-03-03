@@ -5,6 +5,7 @@ import Button from '@/components/Button';
 import Picker from '@/components/Picker';
 import { MapPin, Clock, Calendar, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { cities, districts, venues } from '@/services/mockData';
+import TimeInputModal from './TimeInputModal';
 
 interface LocationTimeStepProps {
   cityId: string;
@@ -69,6 +70,9 @@ export default function LocationTimeStep({
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedHour, setSelectedHour] = useState(new Date().getHours() + 2);
   const [selectedMinute, setSelectedMinute] = useState(0);
+  
+  // Saat input modal için state
+  const [showTimeInputModal, setShowTimeInputModal] = useState(false);
 
   // Şehir seçildiğinde ilçeleri filtrele
   const filteredDistricts = cityId
@@ -127,7 +131,11 @@ export default function LocationTimeStep({
   const selectDate = (day: number) => {
     if (!isDateSelectable(day)) return;
     
-    const newDate = new Date(selectedYear, selectedMonth, day, selectedHour, selectedMinute);
+    // Eğer daha önce bir tarih seçilmişse saatini koru, yoksa varsayılan saat kullan
+    const hour = startDate ? startDate.getHours() : (new Date().getHours() + 2);
+    const minute = startDate ? startDate.getMinutes() : 0;
+    
+    const newDate = new Date(selectedYear, selectedMonth, day, hour, minute);
     setStartDate(newDate);
   };
 
@@ -299,16 +307,34 @@ export default function LocationTimeStep({
             <Calendar size={20} color={colors.text.secondary} />
             <Text style={styles.dateButtonText}>
               {startDate
-                ? startDate.toLocaleString('tr-TR', {
+                ? startDate.toLocaleDateString('tr-TR', {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
                   })
-                : 'Tarih ve saat seçin'}
+                : 'Tarih seçin'}
             </Text>
           </TouchableOpacity>
+
+          {startDate && (
+            <View style={styles.timeSection}>
+              <Text style={styles.timeLabel}>Başlangıç saati:</Text>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeDisplay}>
+                  {startDate.toLocaleTimeString('tr-TR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+                <TouchableOpacity
+                  style={styles.timeButton}
+                  onPress={() => setShowTimeInputModal(true)}
+                >
+                  <Text style={styles.timeButtonText}>Saat belirle</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Süre */}
@@ -431,19 +457,6 @@ export default function LocationTimeStep({
               </View>
             </View>
 
-            {/* Saat Seçici */}
-            <View style={styles.timeSelector}>
-              <Text style={styles.timeSelectorLabel}>Başlangıç Saati</Text>
-              <View style={styles.timeControls}>
-                <Picker
-                  label=""
-                  value={selectedHour.toString()}
-                  onValueChange={(value) => setSelectedHour(parseInt(value))}
-                  options={HOURS.map((h) => ({ label: formatHour(h), value: h.toString() }))}
-                />
-              </View>
-            </View>
-
             {/* Butonlar */}
             <View style={styles.modalActions}>
               <Button
@@ -455,11 +468,7 @@ export default function LocationTimeStep({
               <Button
                 title="Tamam"
                 onPress={() => {
-                  if (startDate) {
-                    const newDate = new Date(startDate);
-                    newDate.setHours(selectedHour, selectedMinute, 0, 0);
-                    setStartDate(newDate);
-                  }
+                  // Tarih seçildiyse modal'ı kapat (saat ayrı modal'da seçilecek)
                   setShowDatePicker(false);
                 }}
                 style={styles.modalButton}
@@ -469,6 +478,26 @@ export default function LocationTimeStep({
           </View>
         </View>
       </Modal>
+
+      {/* Saat Input Modal */}
+      <TimeInputModal
+        visible={showTimeInputModal}
+        initialTime={
+          startDate
+            ? `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`
+            : undefined
+        }
+        onClose={() => setShowTimeInputModal(false)}
+        onSave={(time) => {
+          if (startDate) {
+            const [hour, minute] = time.split(':');
+            const newDate = new Date(startDate);
+            newDate.setHours(parseInt(hour), parseInt(minute), 0, 0);
+            setStartDate(newDate);
+          }
+          setShowTimeInputModal(false);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -630,6 +659,38 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: typography.sizes.md,
     color: colors.text.primary,
+  },
+  timeSection: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  timeLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text.primary,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  timeDisplay: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  timeButton: {
+    backgroundColor: colors.primary[500],
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  timeButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.neutral[0],
   },
   hint: {
     fontSize: typography.sizes.sm,

@@ -9,6 +9,7 @@ import {
   Calendar,
   Trash2,
   Check,
+  Star,
 } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { notificationService, Notification } from '@/services/notificationService';
@@ -104,6 +105,13 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    // Oylama bildirimi için oylama sayfasına git
+    if (notification.type === 'rating_pending' && notification.data?.gameSessionId) {
+      await handleMarkAsRead(notification._id);
+      router.push(`/rating/${notification.data.gameSessionId}` as any);
+      return;
+    }
+
     // Bekleme listesi bildirimleri için oyun detay sayfasına git
     if (notification.type === 'waitlist_slot_available' && notification.data?.gameSessionId) {
       await handleMarkAsRead(notification._id);
@@ -177,6 +185,8 @@ export default function NotificationsScreen() {
         return <UserPlus size={20} color={colors.secondary[500]} />;
       case 'waitlist_slot_available':
         return <CheckCircle2 size={20} color={colors.success[500]} />;
+      case 'rating_pending':
+        return <Star size={20} color={colors.secondary[500]} />;
       default:
         return <Bell size={20} color={colors.neutral[500]} />;
     }
@@ -208,6 +218,8 @@ export default function NotificationsScreen() {
         return colors.secondary[100];
       case 'waitlist_slot_available':
         return colors.success[100];
+      case 'rating_pending':
+        return colors.secondary[100];
       default:
         return colors.neutral[100];
     }

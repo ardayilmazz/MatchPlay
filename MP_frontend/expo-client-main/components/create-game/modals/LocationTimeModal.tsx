@@ -4,6 +4,7 @@ import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 import { X, MapPin, DollarSign, Calendar, Clock, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { API_URL } from '@/config/api';
+import TimeInputModal from '../TimeInputModal';
 
 interface LocationData {
   cityId: string;
@@ -61,6 +62,18 @@ export default function LocationTimeModal({
   const [selectedYear, setSelectedYear] = useState(selectedDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(selectedDate.getMonth());
   const [selectedHour, setSelectedHour] = useState(selectedDate.getHours());
+  const [showTimeInputModal, setShowTimeInputModal] = useState(false);
+
+  // initialDateTime değiştiğinde selectedDate'i güncelle
+  useEffect(() => {
+    if (type === 'datetime' && initialDateTime) {
+      const newDate = new Date(initialDateTime);
+      setSelectedDate(newDate);
+      setSelectedYear(newDate.getFullYear());
+      setSelectedMonth(newDate.getMonth());
+      setSelectedHour(newDate.getHours());
+    }
+  }, [initialDateTime, type]);
 
   // Duration state
   const [duration, setDuration] = useState(initialDuration || 60);
@@ -122,7 +135,10 @@ export default function LocationTimeModal({
 
   const selectDate = (day: number) => {
     if (!isDateSelectable(day)) return;
-    const newDate = new Date(selectedYear, selectedMonth, day, selectedHour, 0);
+    // Mevcut saati koru
+    const hour = selectedDate ? selectedDate.getHours() : selectedHour;
+    const minute = selectedDate ? selectedDate.getMinutes() : 0;
+    const newDate = new Date(selectedYear, selectedMonth, day, hour, minute);
     setSelectedDate(newDate);
   };
 
@@ -161,9 +177,8 @@ export default function LocationTimeModal({
       const numericFee = feeAmount.trim() ? parseFloat(feeAmount) : 0;
       onSave({ feeAmount: numericFee });
     } else if (type === 'datetime') {
-      const finalDate = new Date(selectedDate);
-      finalDate.setHours(selectedHour, 0, 0, 0);
-      onSave({ startDate: finalDate });
+      // selectedDate zaten saat bilgisini içeriyor
+      onSave({ startDate: selectedDate });
     } else if (type === 'duration') {
       onSave({ estimatedDuration: duration });
     }
@@ -296,28 +311,23 @@ export default function LocationTimeModal({
               </View>
             </View>
 
-            {/* Hour Selector */}
-            <View style={styles.hourSelector}>
-              <Text style={styles.hourLabel}>Başlangıç Saati</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hourScroll}>
-                {HOURS.map((hour) => (
-                  <TouchableOpacity
-                    key={hour}
-                    style={[
-                      styles.hourButton,
-                      selectedHour === hour && styles.hourButtonSelected,
-                    ]}
-                    onPress={() => setSelectedHour(hour)}
-                  >
-                    <Text style={[
-                      styles.hourText,
-                      selectedHour === hour && styles.hourTextSelected,
-                    ]}>
-                      {hour}:00
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+            {/* Saat Seçimi */}
+            <View style={styles.timeSection}>
+              <Text style={styles.timeLabel}>Başlangıç saati:</Text>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeDisplay}>
+                  {selectedDate.toLocaleTimeString('tr-TR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+                <TouchableOpacity
+                  style={styles.timeButton}
+                  onPress={() => setShowTimeInputModal(true)}
+                >
+                  <Text style={styles.timeButtonText}>Saat belirle</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <Button title="Kaydet" onPress={handleSave} style={styles.saveButton} />
@@ -392,6 +402,27 @@ export default function LocationTimeModal({
           {renderContent()}
         </View>
       </View>
+
+      {/* Saat Input Modal */}
+      {type === 'datetime' && (
+        <TimeInputModal
+          visible={showTimeInputModal}
+          initialTime={
+            selectedDate
+              ? `${selectedDate.getHours().toString().padStart(2, '0')}:${selectedDate.getMinutes().toString().padStart(2, '0')}`
+              : undefined
+          }
+          onClose={() => setShowTimeInputModal(false)}
+          onSave={(time) => {
+            const [hour, minute] = time.split(':');
+            const newDate = new Date(selectedDate);
+            newDate.setHours(parseInt(hour), parseInt(minute), 0, 0);
+            setSelectedDate(newDate);
+            setSelectedHour(parseInt(hour));
+            setShowTimeInputModal(false);
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -621,5 +652,38 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: spacing.md,
+  },
+  timeSection: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  timeLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text.primary,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  timeDisplay: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  timeButton: {
+    backgroundColor: colors.primary[500],
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  timeButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.background.primary,
   },
 });
