@@ -72,6 +72,7 @@ export interface User {
   skillLevel?: 'beginner' | 'intermediate' | 'advanced';
   averageRating?: number;
   totalGames?: number;
+  points?: number;
   createdAt: string;
   token?: string; // JWT token
 }

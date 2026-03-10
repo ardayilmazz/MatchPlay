@@ -15,6 +15,7 @@ export interface IUser extends Document {
   birthDate?: Date;
   gender?: 'male' | 'female' | 'other';
   isProfileCompleted?: boolean;
+  points?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -42,6 +43,10 @@ const UserSchema: Schema = new Schema({
   isProfileCompleted: {
     type: Boolean,
     default: false,
+  },
+  points: {
+    type: Number,
+    default: 0,
   },
 }, {
   timestamps: true, // Otomatik olarak createdAt ve updatedAt alanları ekler.

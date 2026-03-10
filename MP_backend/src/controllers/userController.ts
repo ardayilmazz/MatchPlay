@@ -142,6 +142,7 @@ export const loginUser = async (req: Request, res: Response) => {
       profilePhoto: user.profilePhoto,
       bio: user.bio,
       sports: user.sports || [],
+      points: user.points || 0,
       createdAt: user.createdAt?.toISOString(),
       token: generateToken(user._id),
     });
@@ -176,6 +177,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       bio: user.bio,
       sports: user.sports || [],
       skillLevel: user.skillLevel,
+      points: user.points || 0,
       createdAt: user.createdAt?.toISOString(),
     });
   } catch (error) {
@@ -222,6 +224,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       bio: updatedUser.bio,
       sports: updatedUser.sports || [],
       skillLevel: updatedUser.skillLevel,
+      points: updatedUser.points || 0,
       createdAt: updatedUser.createdAt?.toISOString(),
     });
   } catch (error) {
@@ -290,6 +293,7 @@ export const registerUser = async (req: Request, res: Response) => {
         profilePhoto: user.profilePhoto,
         bio: user.bio,
         sports: user.sports || [],
+        points: user.points || 0,
         createdAt: user.createdAt?.toISOString(),
         token: generateToken(user._id),
       });

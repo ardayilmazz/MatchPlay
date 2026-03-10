@@ -12,6 +12,7 @@ export interface User {
   gender?: 'male' | 'female' | 'other';
   averageRating?: number;
   totalGames?: number;
+  points?: number;
   createdAt: string;
   token?: string; // JWT token (giriş yapınca eklenir)
 }

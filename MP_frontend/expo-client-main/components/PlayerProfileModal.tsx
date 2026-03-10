@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,10 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { ArrowLeft, User } from 'lucide-react-native';
+import { ArrowLeft, User, Star } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { calculateAge } from '@/utils/userHelpers';
+import { ratingService } from '@/services/ratingService';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -42,6 +43,29 @@ export default function PlayerProfileModal({
   player,
   onClose,
 }: PlayerProfileModalProps) {
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [loadingRating, setLoadingRating] = useState(false);
+
+  useEffect(() => {
+    if (visible && player?._id) {
+      setLoadingRating(true);
+      ratingService
+        .getUserAverageRating(player._id)
+        .then((data) => {
+          setAverageRating(data.averageRating);
+        })
+        .catch((error) => {
+          console.error('[PlayerProfileModal] Rating yüklenirken hata:', error);
+          setAverageRating(null);
+        })
+        .finally(() => {
+          setLoadingRating(false);
+        });
+    } else {
+      setAverageRating(null);
+    }
+  }, [visible, player?._id]);
+
   if (!player) return null;
 
   const age = player.birthDate ? calculateAge(player.birthDate) : null;
@@ -93,6 +117,14 @@ export default function PlayerProfileModal({
                 )}
                 <Text style={styles.infoText}>{getGenderLabel(player.gender)}</Text>
               </View>
+
+              {/* Değerlendirme Puanı */}
+              {averageRating !== null && (
+                <View style={styles.ratingContainer}>
+                  <Star size={20} color={colors.secondary[500]} fill={colors.secondary[500]} />
+                  <Text style={styles.ratingText}>{averageRating.toFixed(1)}</Text>
+                </View>
+              )}
             </View>
           </ScrollView>
         </View>
@@ -179,5 +211,20 @@ const styles = StyleSheet.create({
   infoDivider: {
     fontSize: typography.sizes.md,
     color: colors.text.tertiary,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    backgroundColor: colors.secondary[50],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  ratingText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.secondary[700],
   },
 });

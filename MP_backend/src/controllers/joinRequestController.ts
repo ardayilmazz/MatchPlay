@@ -666,6 +666,42 @@ export const getUserRequests = async (req: Request, res: Response) => {
 
     console.log('[getUserRequests] Kullanıcı istekleri getiriliyor:', { userId });
 
+    // Önce bekleyen isteklerin oyun durumlarını kontrol et ve gerekirse iptal et
+    const pendingRequests = await JoinRequest.find({ 
+      userId, 
+      status: 'pending' 
+    }).populate('gameSessionId');
+
+    const now = new Date();
+    for (const request of pendingRequests) {
+      const game = request.gameSessionId as any;
+      if (!game) continue;
+
+      // Oyun durumu kontrolü (in_progress veya completed ise iptal et)
+      if (game.gameStatus === 'in_progress' || game.gameStatus === 'completed') {
+        await JoinRequest.findByIdAndUpdate(request._id, {
+          status: 'cancelled',
+          respondedAt: now,
+        });
+        console.log(`[getUserRequests] Bekleyen istek otomatik iptal edildi: ${request._id} - Oyun durumu: ${game.gameStatus}`);
+        continue;
+      }
+
+      // Oyun durumu güncellenmemişse, başlangıç zamanına göre kontrol et
+      if (game.startDate && game.estimatedDuration) {
+        const gameStartTime = new Date(game.startDate);
+        
+        // Oyun başlamışsa isteği iptal et
+        if (now >= gameStartTime) {
+          await JoinRequest.findByIdAndUpdate(request._id, {
+            status: 'cancelled',
+            respondedAt: now,
+          });
+          console.log(`[getUserRequests] Bekleyen istek otomatik iptal edildi: ${request._id} - Oyun başladı`);
+        }
+      }
+    }
+
     const joinRequests = await JoinRequest.find({ userId })
       .populate({
         path: 'gameSessionId',

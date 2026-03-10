@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
-import { X, MapPin, DollarSign, Calendar, Clock, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react-native';
+import { X, MapPin, DollarSign, Calendar, Clock, ChevronLeft, ChevronRight, ArrowLeft, Edit3 } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { API_URL } from '@/config/api';
 import TimeInputModal from '../TimeInputModal';
@@ -29,12 +29,31 @@ interface LocationTimeModalProps {
 }
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
+const MAX_DURATION = 240; // 4 saat maksimum
 const HOURS = Array.from({ length: 19 }, (_, i) => i + 6); // 6-24
 const TURKISH_MONTHS = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
 ];
 const DAYS_OF_WEEK = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
+// Süre formatlama fonksiyonu
+const formatDuration = (minutes: number): string => {
+  // 60'dan küçükse veya 60'ın katı değilse dakika olarak göster
+  if (minutes < 60 || minutes % 60 !== 0) {
+    return `${minutes} dk`;
+  }
+  
+  // 60'ın katı ve 60 veya daha büyükse saat formatında göster
+  const hours = minutes / 60;
+  if (hours === 1) {
+    return '1 saat';
+  } else if (hours % 1 === 0) {
+    return `${hours} saat`;
+  } else {
+    return `${hours} saat`;
+  }
+};
 
 export default function LocationTimeModal({
   visible,
@@ -77,6 +96,9 @@ export default function LocationTimeModal({
 
   // Duration state
   const [duration, setDuration] = useState(initialDuration || 60);
+  const [isCustomDuration, setIsCustomDuration] = useState(false);
+  const [customDurationInput, setCustomDurationInput] = useState('');
+  const durationInputRef = useRef<TextInput>(null);
 
   // Search venues
   const handleSearch = async () => {
@@ -160,12 +182,60 @@ export default function LocationTimeModal({
     }
   };
 
+  // initialDuration değiştiğinde state'i güncelle
+  useEffect(() => {
+    if (type === 'duration' && initialDuration) {
+      const isInPreset = DURATIONS.includes(initialDuration);
+      setDuration(initialDuration);
+      setIsCustomDuration(!isInPreset);
+      if (!isInPreset) {
+        setCustomDurationInput(String(initialDuration));
+      }
+    }
+  }, [initialDuration, type]);
+
   const changeDuration = (direction: 'prev' | 'next') => {
+    if (isCustomDuration) return; // Custom modda ok tuşları çalışmaz
+    
     const currentIndex = DURATIONS.indexOf(duration);
     if (direction === 'next' && currentIndex < DURATIONS.length - 1) {
       setDuration(DURATIONS[currentIndex + 1]);
     } else if (direction === 'prev' && currentIndex > 0) {
       setDuration(DURATIONS[currentIndex - 1]);
+    }
+  };
+
+  const handleCustomDurationSave = () => {
+    Keyboard.dismiss(); // Klavyeyi kapat
+    const value = parseInt(customDurationInput);
+    if (isNaN(value) || value <= 0) {
+      Alert.alert('Hata', 'Lütfen geçerli bir süre girin');
+      return;
+    }
+    if (value > MAX_DURATION) {
+      Alert.alert('Hata', `Oyun süresi en fazla ${MAX_DURATION} dakika (4 saat) olabilir`);
+      return;
+    }
+    setDuration(value);
+    setIsCustomDuration(false);
+    setCustomDurationInput('');
+    onSave(value);
+  };
+
+  const handleCustomDurationPress = () => {
+    setIsCustomDuration(true);
+    setCustomDurationInput(String(duration));
+  };
+
+  const handleCancelCustom = () => {
+    Keyboard.dismiss(); // Klavyeyi kapat
+    setIsCustomDuration(false);
+    setCustomDurationInput('');
+    // Eğer önceki değer preset'te varsa ona dön, yoksa 60'a dön
+    if (DURATIONS.includes(duration)) {
+      // Zaten preset'te, değişiklik yok
+    } else {
+      setDuration(60);
     }
   };
 
@@ -337,29 +407,78 @@ export default function LocationTimeModal({
       case 'duration':
         return (
           <View style={styles.durationContent}>
-            <View style={styles.durationSelector}>
-              <TouchableOpacity
-                style={[styles.durationArrow, DURATIONS.indexOf(duration) === 0 && styles.durationArrowDisabled]}
-                onPress={() => changeDuration('prev')}
-                disabled={DURATIONS.indexOf(duration) === 0}
-              >
-                <ChevronLeft size={24} color={DURATIONS.indexOf(duration) === 0 ? colors.neutral[300] : colors.primary[500]} />
-              </TouchableOpacity>
-              
-              <View style={styles.durationDisplay}>
-                <Text style={styles.durationValue}>{duration} dk</Text>
-              </View>
-              
-              <TouchableOpacity
-                style={[styles.durationArrow, DURATIONS.indexOf(duration) === DURATIONS.length - 1 && styles.durationArrowDisabled]}
-                onPress={() => changeDuration('next')}
-                disabled={DURATIONS.indexOf(duration) === DURATIONS.length - 1}
-              >
-                <ChevronRight size={24} color={DURATIONS.indexOf(duration) === DURATIONS.length - 1 ? colors.neutral[300] : colors.primary[500]} />
-              </TouchableOpacity>
-            </View>
+            {!isCustomDuration ? (
+              <>
+                <View style={styles.durationSelector}>
+                  <TouchableOpacity
+                    style={[styles.durationArrow, DURATIONS.indexOf(duration) === 0 && styles.durationArrowDisabled]}
+                    onPress={() => changeDuration('prev')}
+                    disabled={DURATIONS.indexOf(duration) === 0}
+                  >
+                    <ChevronLeft size={24} color={DURATIONS.indexOf(duration) === 0 ? colors.neutral[300] : colors.primary[500]} />
+                  </TouchableOpacity>
+                  
+                  <View style={styles.durationDisplay}>
+                    <Text style={styles.durationValue}>{formatDuration(duration)}</Text>
+                  </View>
+                  
+                  <TouchableOpacity
+                    style={[styles.durationArrow, DURATIONS.indexOf(duration) === DURATIONS.length - 1 && styles.durationArrowDisabled]}
+                    onPress={() => changeDuration('next')}
+                    disabled={DURATIONS.indexOf(duration) === DURATIONS.length - 1}
+                  >
+                    <ChevronRight size={24} color={DURATIONS.indexOf(duration) === DURATIONS.length - 1 ? colors.neutral[300] : colors.primary[500]} />
+                  </TouchableOpacity>
+                </View>
 
-            <Button title="Kaydet" onPress={handleSave} style={styles.saveButton} />
+                <TouchableOpacity
+                  style={styles.customDurationButton}
+                  onPress={handleCustomDurationPress}
+                >
+                  <Edit3 size={20} color={colors.primary[500]} />
+                  <Text style={styles.customDurationText}>Özel Süre Gir</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.customDurationContainer}>
+                <Text style={styles.customDurationLabel}>Oyun Süresi (Dakika)</Text>
+                <Text style={styles.customDurationHint}>
+                  Maksimum {MAX_DURATION} dakika (4 saat)
+                </Text>
+                <TextInput
+                  ref={durationInputRef}
+                  style={styles.customDurationInput}
+                  value={customDurationInput}
+                  onChangeText={setCustomDurationInput}
+                  placeholder="Örn: 145"
+                  placeholderTextColor={colors.text.tertiary}
+                  keyboardType="numeric"
+                  maxLength={3}
+                  returnKeyType="done"
+                  blurOnSubmit={true}
+                  onSubmitEditing={() => {
+                    Keyboard.dismiss();
+                  }}
+                />
+                <View style={styles.customDurationButtons}>
+                  <Button
+                    title="İptal"
+                    onPress={handleCancelCustom}
+                    variant="outline"
+                    style={styles.customDurationCancelButton}
+                  />
+                  <Button
+                    title="Kaydet"
+                    onPress={handleCustomDurationSave}
+                    style={styles.customDurationSaveButton}
+                  />
+                </View>
+              </View>
+            )}
+
+            {!isCustomDuration && (
+              <Button title="Kaydet" onPress={handleSave} style={styles.saveButton} />
+            )}
           </View>
         );
 
@@ -385,7 +504,11 @@ export default function LocationTimeModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             {onBackToMenu && (
@@ -399,9 +522,17 @@ export default function LocationTimeModal({
             </TouchableOpacity>
           </View>
 
-          {renderContent()}
+          <ScrollView
+            style={styles.modalScrollView}
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {renderContent()}
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
       {/* Saat Input Modal */}
       {type === 'datetime' && (
@@ -437,14 +568,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
+    maxHeight: '90%',
+    flex: 1,
+  },
+  modalScrollView: {
+    flex: 1,
+  },
+  modalScrollContent: {
     padding: spacing.lg,
+    paddingBottom: spacing.xl * 2, // Klavye için ekstra padding
     maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral[200],
   },
   backButton: {
     marginRight: spacing.sm,
@@ -649,6 +792,57 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xxl,
     fontWeight: typography.weights.bold,
     color: colors.primary[500],
+  },
+  customDurationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+    marginTop: spacing.md,
+  },
+  customDurationText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.primary[500],
+  },
+  customDurationContainer: {
+    gap: spacing.md,
+  },
+  customDurationLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text.primary,
+  },
+  customDurationHint: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.tertiary,
+  },
+  customDurationInput: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: typography.sizes.lg,
+    color: colors.text.primary,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    textAlign: 'center',
+  },
+  customDurationButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.xl, // Klavye için ekstra boşluk
+  },
+  customDurationCancelButton: {
+    flex: 1,
+  },
+  customDurationSaveButton: {
+    flex: 1,
   },
   saveButton: {
     marginTop: spacing.md,

@@ -20,11 +20,13 @@ import {
   Award,
   User,
   Trash2,
+  Star,
 } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { gameService } from '@/services/gameService';
 import { useAuth } from '@/contexts/AuthContext';
 import PlayerProfileModal from '@/components/PlayerProfileModal';
+import { ratingService } from '@/services/ratingService';
 
 export default function CompletedGameDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,12 +36,41 @@ export default function CompletedGameDetailScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
+  const [playerRatings, setPlayerRatings] = useState<Record<string, number | null>>({});
 
   const loadGameDetails = async () => {
     try {
       if (!id || typeof id !== 'string') return;
       const gameData = await gameService.fetchGameSession(id);
       setGame(gameData);
+
+      // Tüm katılımcılar için bu oyundaki ortalama puanları yükle
+      const ratings: Record<string, number | null> = {};
+      const allPlayers: Array<any> = [];
+      
+      if (gameData.creatorId) {
+        allPlayers.push(gameData.creatorId);
+      }
+      
+      if (gameData.acceptedPlayers && Array.isArray(gameData.acceptedPlayers)) {
+        allPlayers.push(...gameData.acceptedPlayers);
+      }
+
+      for (const player of allPlayers) {
+        if (!player) continue;
+        const playerId = (typeof player === 'object' && player._id) ? player._id : (typeof player === 'object' && player.id) ? player.id : (typeof player === 'string') ? player : null;
+        if (playerId) {
+          try {
+            const ratingData = await ratingService.getGameUserAverageRating(id, playerId);
+            ratings[playerId] = ratingData.averageRating;
+          } catch (error) {
+            console.error(`[CompletedGameDetailScreen] Rating yüklenirken hata (${playerId}):`, error);
+            ratings[playerId] = null;
+          }
+        }
+      }
+
+      setPlayerRatings(ratings);
     } catch (error) {
       console.error('Oyun detayı yüklenirken hata:', error);
       Alert.alert('Hata', 'Oyun detayı yüklenemedi');
@@ -95,6 +126,12 @@ export default function CompletedGameDetailScreen() {
       birthDate: player.birthDate,
     });
     setShowPlayerModal(true);
+  };
+
+  const handleRatingPress = () => {
+    if (id && typeof id === 'string') {
+      router.push(`/rating/${id}` as any);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -240,6 +277,14 @@ export default function CompletedGameDetailScreen() {
                   <Text style={[styles.playerName, styles.playerNameClickable]}>
                     {creator.firstName} {creator.lastName}
                   </Text>
+                  {creator && (creator._id || creator.id) && playerRatings[creator._id || creator.id || ''] !== null && playerRatings[creator._id || creator.id || ''] !== undefined && (
+                    <View style={styles.ratingBadge}>
+                      <Star size={14} color={colors.secondary[500]} fill={colors.secondary[500]} />
+                      <Text style={styles.ratingBadgeText}>
+                        {playerRatings[creator._id || creator.id || '']?.toFixed(1)}
+                      </Text>
+                    </View>
+                  )}
                 </Pressable>
               ) : (
                 <Text style={styles.detailValue}>Belirtilmemiş</Text>
@@ -262,6 +307,14 @@ export default function CompletedGameDetailScreen() {
                       <Text style={[styles.playerName, styles.playerNameClickable]}>
                         {player.firstName} {player.lastName}
                       </Text>
+                      {(player._id || player.id) && playerRatings[player._id || player.id || ''] !== null && playerRatings[player._id || player.id || ''] !== undefined && (
+                        <View style={styles.ratingBadge}>
+                          <Star size={14} color={colors.secondary[500]} fill={colors.secondary[500]} />
+                          <Text style={styles.ratingBadgeText}>
+                            {playerRatings[player._id || player.id || '']?.toFixed(1)}
+                          </Text>
+                        </View>
+                      )}
                     </Pressable>
                   ))}
                 </View>
@@ -317,6 +370,16 @@ export default function CompletedGameDetailScreen() {
           setSelectedPlayer(null);
         }}
       />
+
+      {/* Değerlendirme Butonu - Sağ Alt Köşe */}
+      <TouchableOpacity
+        style={styles.ratingButton}
+        onPress={handleRatingPress}
+        activeOpacity={0.8}
+      >
+        <Star size={20} color={colors.neutral[0]} fill={colors.neutral[0]} />
+        <Text style={styles.ratingButtonText}>Değerlendirme</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -410,6 +473,21 @@ const styles = StyleSheet.create({
     color: colors.primary[600],
     textDecorationLine: 'underline',
   },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.secondary[50],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    marginLeft: 'auto',
+  },
+  ratingBadgeText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.secondary[700],
+  },
   descriptionText: {
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
@@ -434,5 +512,25 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
+  },
+  ratingButton: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    right: spacing.lg,
+    backgroundColor: colors.primary[500],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.full,
+    gap: spacing.sm,
+    ...shadows.lg,
+    zIndex: 1000,
+  },
+  ratingButtonText: {
+    color: colors.neutral[0],
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
   },
 });

@@ -15,6 +15,24 @@ import {
 import { router } from 'expo-router';
 import { generateGameTitle } from '@/utils/gameTitle';
 
+// Süre formatlama fonksiyonu
+const formatDuration = (minutes: number): string => {
+  // 60'dan küçükse veya 60'ın katı değilse dakika olarak göster
+  if (minutes < 60 || minutes % 60 !== 0) {
+    return `${minutes} dk`;
+  }
+  
+  // 60'ın katı ve 60 veya daha büyükse saat formatında göster
+  const hours = minutes / 60;
+  if (hours === 1) {
+    return '1 saat';
+  } else if (hours % 1 === 0) {
+    return `${hours} saat`;
+  } else {
+    return `${hours} saat`;
+  }
+};
+
 interface NewSummaryStepProps {
   draft: GameSessionDraft;
   onBack: () => void;
@@ -160,7 +178,7 @@ export default function NewSummaryStep({
             </View>
             <View style={styles.row}>
               <Clock size={16} color={colors.text.secondary} />
-              <Text style={styles.value}>{draft.estimatedDuration || 60} dakika</Text>
+              <Text style={styles.value}>{formatDuration(draft.estimatedDuration || 60)}</Text>
             </View>
             <View style={styles.row}>
               <DollarSign size={16} color={colors.text.secondary} />

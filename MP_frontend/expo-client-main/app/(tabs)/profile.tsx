@@ -1,14 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Edit, Clock, Users, ChevronRight, Settings, Calendar, UserCheck, CheckCircle, Star, AlertTriangle } from 'lucide-react-native';
+import { Edit, Clock, Users, ChevronRight, Settings, Calendar, UserCheck, CheckCircle, Star, AlertTriangle, Award } from 'lucide-react-native';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { authService } from '@/services/authService';
+import { ratingService } from '@/services/ratingService';
 
 export default function ProfileScreen() {
   const { user, setUser } = useAuth();
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [loadingRating, setLoadingRating] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -16,10 +19,23 @@ export default function ProfileScreen() {
         const currentUser = await authService.getCurrentUser();
         if (currentUser) {
           setUser(currentUser);
+          // Kullanıcının ortalama rating'ini yükle
+          const userId = currentUser.id || currentUser._id;
+          if (userId) {
+            setLoadingRating(true);
+            try {
+              const ratingData = await ratingService.getUserAverageRating(userId);
+              setAverageRating(ratingData.averageRating);
+            } catch (error) {
+              console.error('[ProfileScreen] Rating yüklenirken hata:', error);
+            } finally {
+              setLoadingRating(false);
+            }
+          }
         }
       };
       refreshUser();
-    }, [])
+    }, [setUser])
   );
 
   const handleEditProfile = () => {
@@ -57,6 +73,19 @@ export default function ProfileScreen() {
             {user?.firstName} {user?.lastName}
           </Text>
           <Text style={styles.email}>{user?.email}</Text>
+
+          {averageRating !== null && (
+            <View style={styles.ratingContainer}>
+              <Star size={20} color={colors.secondary[500]} fill={colors.secondary[500]} />
+              <Text style={styles.ratingText}>{averageRating.toFixed(1)}</Text>
+            </View>
+          )}
+
+          <View style={styles.pointsContainer}>
+            <Award size={20} color={colors.primary[500]} />
+            <Text style={styles.pointsLabel}>Puan</Text>
+            <Text style={styles.pointsValue}>{user?.points || 0}</Text>
+          </View>
 
           {user?.university && (
             <View style={styles.infoCard}>
@@ -235,7 +264,42 @@ const styles = StyleSheet.create({
   email: {
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     marginBottom: spacing.xl,
+    backgroundColor: colors.secondary[50],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  ratingText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.secondary[700],
+  },
+  pointsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  pointsLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text.secondary,
+  },
+  pointsValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.primary[600],
   },
   infoCard: {
     width: '100%',

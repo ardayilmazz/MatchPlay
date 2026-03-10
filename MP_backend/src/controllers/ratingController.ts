@@ -101,6 +101,12 @@ export const createRating = async (req: Request, res: Response) => {
       comment: comment || undefined,
     });
 
+    // Değerlendirme yapıldığı için +2 puan ver
+    await User.findByIdAndUpdate(raterId, {
+      $inc: { points: 2 },
+    });
+    console.log(`[createRating] Kullanıcı ${raterId} için değerlendirme puanı (+2) eklendi`);
+
     console.log('[createRating] Oylama oluşturuldu:', newRating._id);
 
     res.status(201).json({
@@ -251,5 +257,228 @@ export const getPendingRatings = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[getPendingRatings] Hata:', error.message);
     res.status(500).json({ success: false, message: 'Bekleyen oylamalar getirilirken bir hata oluştu' });
+  }
+};
+
+/**
+ * Belirli bir oyun için tüm katılımcıları ve oy durumlarını getir
+ * GET /api/ratings/game/:gameId
+ */
+export const getGameRatings = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+    const { gameId } = req.params;
+
+    console.log('[getGameRatings] Oyun oylamaları getiriliyor:', { gameId, userId });
+
+    // Oyunu bul
+    const game = await GameSession.findById(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Oyun bulunamadı' });
+    }
+
+    // Kullanıcı bu oyunda mı kontrol et
+    const isParticipant =
+      game.creatorId.toString() === userId.toString() ||
+      game.acceptedPlayers?.some((p: any) => p.toString() === userId.toString());
+
+    if (!isParticipant) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu oyuna katılmadınız',
+      });
+    }
+
+    // Tüm katılımcıları bul (kendisi hariç)
+    const allParticipants = [
+      game.creatorId,
+      ...(game.acceptedPlayers || []),
+    ]
+      .map((id: any) => id.toString())
+      .filter((participantId) => participantId !== userId.toString());
+
+    // Kullanıcı bilgilerini getir
+    const users = await User.find({
+      _id: { $in: allParticipants },
+    }).select('firstName lastName profilePhoto');
+
+    // Bu oyunda kullanıcının yaptığı oylamaları bul
+    const ratings = await Rating.find({
+      gameSessionId: gameId,
+      raterId: userId,
+    });
+
+    // Her katılımcı için oy durumunu belirle
+    const participantsWithRatingStatus = users.map((u: any) => {
+      const userRating = ratings.find(
+        (r: any) => r.ratedId.toString() === u._id.toString()
+      );
+
+      return {
+        id: String(u._id),
+        firstName: u.firstName,
+        lastName: u.lastName,
+        profilePhoto: u.profilePhoto,
+        hasRated: !!userRating,
+        rating: userRating ? userRating.rating : undefined,
+        comment: userRating ? userRating.comment : undefined,
+        ratingId: userRating ? String(userRating._id) : undefined,
+      };
+    });
+
+    console.log(`[getGameRatings] ${participantsWithRatingStatus.length} katılımcı bulundu`);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        participants: participantsWithRatingStatus,
+        allRated: participantsWithRatingStatus.every((p) => p.hasRated),
+      },
+    });
+  } catch (error: any) {
+    console.error('[getGameRatings] Hata:', error.message);
+    res.status(500).json({ success: false, message: 'Oyun oylamaları getirilirken bir hata oluştu' });
+  }
+};
+
+/**
+ * Kullanıcının ortalama değerlendirme puanını hesapla
+ * GET /api/ratings/user/:userId/average
+ */
+export const getUserAverageRating = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    console.log('[getUserAverageRating] Kullanıcı ortalama puanı hesaplanıyor:', userId);
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: 'Geçersiz kullanıcı ID' });
+    }
+
+    // Kullanıcının katıldığı ve bitmiş oyunları bul
+    const now = new Date();
+    const completedGames = await GameSession.find({
+      $or: [{ creatorId: userId }, { acceptedPlayers: userId }],
+      status: { $ne: 'cancelled' },
+      startDate: { $exists: true, $ne: null },
+      estimatedDuration: { $exists: true, $ne: null },
+      $expr: {
+        $lte: [
+          { $add: ['$startDate', { $multiply: ['$estimatedDuration', 60000] }] },
+          now,
+        ],
+      },
+    }).select('_id');
+
+    const gameIds = completedGames.map((g) => g._id);
+
+    if (gameIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          averageRating: null,
+          totalRatings: 0,
+          gamesWithRatings: 0,
+          gameAverages: [],
+        },
+      });
+    }
+
+    // Her oyun için bu kullanıcıya verilen ratingleri bul
+    const ratingsByGame = await Rating.aggregate([
+      {
+        $match: {
+          gameSessionId: { $in: gameIds },
+          ratedId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $group: {
+          _id: '$gameSessionId',
+          ratings: { $push: '$rating' },
+          average: { $avg: '$rating' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Oyun ortalamalarını hesapla
+    const gameAverages = ratingsByGame.map((item) => ({
+      gameId: String(item._id),
+      averageRating: Math.round(item.average * 10) / 10, // 1 ondalık basamak
+      ratingCount: item.count,
+    }));
+
+    // Tüm oyunların ortalamalarının ortalaması
+    let overallAverage = null;
+    if (gameAverages.length > 0) {
+      const sumOfAverages = gameAverages.reduce((sum, game) => sum + game.averageRating, 0);
+      overallAverage = Math.round((sumOfAverages / gameAverages.length) * 10) / 10;
+    }
+
+    const totalRatings = ratingsByGame.reduce((sum, item) => sum + item.count, 0);
+
+    console.log(`[getUserAverageRating] Kullanıcı ${userId}: ${overallAverage} ortalama puan (${gameAverages.length} oyundan)`);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        averageRating: overallAverage,
+        totalRatings,
+        gamesWithRatings: gameAverages.length,
+        gameAverages,
+      },
+    });
+  } catch (error: any) {
+    console.error('[getUserAverageRating] Hata:', error.message);
+    res.status(500).json({ success: false, message: 'Ortalama puan hesaplanırken bir hata oluştu' });
+  }
+};
+
+/**
+ * Belirli bir oyun için kullanıcının aldığı ortalama değerlendirme puanını hesapla
+ * GET /api/ratings/game/:gameId/user/:userId/average
+ */
+export const getGameUserAverageRating = async (req: Request, res: Response) => {
+  try {
+    const { gameId, userId } = req.params;
+
+    console.log('[getGameUserAverageRating] Oyun için kullanıcı ortalama puanı hesaplanıyor:', { gameId, userId });
+
+    if (!mongoose.Types.ObjectId.isValid(gameId) || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: 'Geçersiz oyun veya kullanıcı ID' });
+    }
+
+    // Bu oyun için bu kullanıcıya verilen tüm ratingleri bul
+    const ratings = await Rating.find({
+      gameSessionId: new mongoose.Types.ObjectId(gameId),
+      ratedId: new mongoose.Types.ObjectId(userId),
+    }).select('rating');
+
+    if (ratings.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          averageRating: null,
+          ratingCount: 0,
+        },
+      });
+    }
+
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    const averageRating = Math.round((sum / ratings.length) * 10) / 10;
+
+    console.log(`[getGameUserAverageRating] Oyun ${gameId} için kullanıcı ${userId}: ${averageRating} ortalama puan (${ratings.length} değerlendirme)`);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        averageRating,
+        ratingCount: ratings.length,
+      },
+    });
+  } catch (error: any) {
+    console.error('[getGameUserAverageRating] Hata:', error.message);
+    res.status(500).json({ success: false, message: 'Ortalama puan hesaplanırken bir hata oluştu' });
   }
 };

@@ -4,6 +4,9 @@ import {
   createRating,
   getUserRatings,
   getPendingRatings,
+  getGameRatings,
+  getUserAverageRating,
+  getGameUserAverageRating,
 } from '../controllers/ratingController';
 
 const router = express.Router();
@@ -74,5 +77,66 @@ router.get('/user/:userId', getUserRatings);
  *         description: Başarılı
  */
 router.get('/pending', protect, getPendingRatings);
+
+/**
+ * @swagger
+ * /api/ratings/game/:gameId:
+ *   get:
+ *     summary: Belirli bir oyun için tüm katılımcıları ve oy durumlarını getir
+ *     tags: [Rating]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: gameId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Başarılı
+ */
+router.get('/game/:gameId', protect, getGameRatings);
+
+/**
+ * @swagger
+ * /api/ratings/user/:userId/average:
+ *   get:
+ *     summary: Kullanıcının ortalama değerlendirme puanını getir
+ *     tags: [Rating]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Başarılı
+ */
+router.get('/user/:userId/average', getUserAverageRating);
+
+/**
+ * @swagger
+ * /api/ratings/game/:gameId/user/:userId/average:
+ *   get:
+ *     summary: Belirli bir oyun için kullanıcının aldığı ortalama değerlendirme puanını getir
+ *     tags: [Rating]
+ *     parameters:
+ *       - in: path
+ *         name: gameId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Başarılı
+ */
+router.get('/game/:gameId/user/:userId/average', getGameUserAverageRating);
 
 export default router;

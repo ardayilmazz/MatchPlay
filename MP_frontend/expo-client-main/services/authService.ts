@@ -75,6 +75,7 @@ export const authService = {
         profilePhoto: data.profilePhoto || '',
         bio: data.bio || '',
         sports: [],
+        points: data.points || 0,
         createdAt: new Date().toISOString(),
         token: data.token, // Token'ı user objesine ekle
       };
@@ -117,6 +118,7 @@ export const authService = {
         university: data.university || '',
         department: data.department || '',
         profilePhoto: data.profilePhoto,
+        points: data.points || 0,
         bio: data.bio,
         sports: data.sports || [],
         createdAt: data.createdAt || new Date().toISOString(),
@@ -174,6 +176,7 @@ export const authService = {
         profilePhoto: data.profilePhoto,
         bio: data.bio,
         sports: data.sports || [],
+        points: data.points || 0,
         createdAt: data.createdAt || new Date().toISOString(),
         token: token, // Mevcut token'ı ekle
       };
@@ -225,6 +228,7 @@ export const authService = {
         lastName: data.lastName,
         university: data.university || '',
         department: data.department || '',
+        points: data.points || 0,
         profilePhoto: data.profilePhoto,
         bio: data.bio,
         sports: data.sports || [],

@@ -359,6 +359,9 @@ export default function GameDetailScreen() {
     );
   }
 
+  // Oyun başladıysa (in_progress veya completed) düzenleme yapılamaz
+  const isGameStarted = editedGame.gameStatus === 'in_progress' || editedGame.gameStatus === 'completed';
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen
@@ -379,11 +382,19 @@ export default function GameDetailScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.content}>
+          {isGameStarted && (
+            <View style={styles.infoBanner}>
+              <Text style={styles.infoBannerText}>
+                Oyun başladığı için düzenleme yapılamaz. Oyun bilgilerini görüntüleyebilirsiniz.
+              </Text>
+            </View>
+          )}
           
           {/* 1. Oyun */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowGameModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowGameModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Oyun</Text>
@@ -391,13 +402,14 @@ export default function GameDetailScreen() {
                 {editedGame.gameType?.name || 'Belirtilmemiş'}
               </Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 2. Konum */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowLocationModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowLocationModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Konum</Text>
@@ -408,13 +420,14 @@ export default function GameDetailScreen() {
                 <Text style={styles.itemSubValue}>{editedGame.venueAddress}</Text>
               )}
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 3. Oyun Ücreti */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowFeeModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowFeeModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Oyun Ücreti</Text>
@@ -424,25 +437,27 @@ export default function GameDetailScreen() {
                   : 'Ücretsiz'}
               </Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 4. Tarih ve Saat */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowDateModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowDateModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Tarih ve Saat</Text>
               <Text style={styles.itemValue}>{formatDate(editedGame.startDate)}</Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 5. Oyun Süresi */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowDurationModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowDurationModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Oyun Süresi</Text>
@@ -452,25 +467,27 @@ export default function GameDetailScreen() {
                   : 'Belirtilmemiş'}
               </Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 6. Başlık */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowTitleModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowTitleModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Başlık</Text>
               <Text style={styles.itemValue}>{editedGame.title || 'Belirtilmemiş'}</Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 7. Açıklama */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowDescriptionModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowDescriptionModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Açıklama</Text>
@@ -478,13 +495,14 @@ export default function GameDetailScreen() {
                 {editedGame.description || 'Açıklama yok'}
               </Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 8. Oyuncu Sayıları */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowPlayersModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowPlayersModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Oyuncu Sayıları</Text>
@@ -545,13 +563,14 @@ export default function GameDetailScreen() {
                 {editedGame.skillLevel ? getSkillLevelLabel(editedGame.skillLevel) : 'Belirtilmemiş'}
               </Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
           {/* 11. Cinsiyet Tercihi */}
           <TouchableOpacity 
-            style={styles.editableItem} 
-            onPress={() => setShowGenderModal(true)}
+            style={[styles.editableItem, isGameStarted && styles.editableItemDisabled]} 
+            onPress={() => !isGameStarted && setShowGenderModal(true)}
+            disabled={isGameStarted}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLabel}>Cinsiyet Tercihi</Text>
@@ -559,14 +578,14 @@ export default function GameDetailScreen() {
                 {editedGame.genderPreference ? getGenderLabel(editedGame.genderPreference) : 'Belirtilmemiş'}
               </Text>
             </View>
-            <Edit2 size={20} color={colors.primary[500]} />
+            <Edit2 size={20} color={isGameStarted ? colors.neutral[300] : colors.primary[500]} />
           </TouchableOpacity>
 
         </View>
       </ScrollView>
 
       {/* Kaydet ve İptal Butonları - EN ALTTA SABİT */}
-      {hasChanges() && (
+      {hasChanges() && !isGameStarted && (
         <View style={styles.bottomActions}>
           <TouchableOpacity
             style={[styles.actionButton, styles.cancelButton]}
@@ -737,6 +756,24 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
     minHeight: 70,
+  },
+  editableItemDisabled: {
+    opacity: 0.6,
+    backgroundColor: colors.neutral[50],
+  },
+  infoBanner: {
+    backgroundColor: colors.secondary[50],
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.secondary[500],
+  },
+  infoBannerText: {
+    fontSize: typography.sizes.sm,
+    color: colors.secondary[700],
+    fontWeight: typography.weights.medium,
+    lineHeight: 20,
   },
   nonEditableItem: {
     backgroundColor: colors.neutral[0],

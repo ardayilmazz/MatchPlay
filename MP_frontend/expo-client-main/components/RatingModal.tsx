@@ -23,6 +23,9 @@ interface RatingModalProps {
   onClose: () => void;
   onSuccess: (rating: number, comment: string) => void;
   onComplaint: () => void;
+  viewOnly?: boolean;
+  existingRating?: number;
+  existingComment?: string;
 }
 
 export default function RatingModal({
@@ -34,18 +37,26 @@ export default function RatingModal({
   onClose,
   onSuccess,
   onComplaint,
+  viewOnly = false,
+  existingRating,
+  existingComment,
 }: RatingModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Modal açıldığında state'i sıfırla
+  // Modal açıldığında state'i sıfırla veya mevcut değerleri yükle
   useEffect(() => {
     if (visible) {
-      setRating(0);
-      setComment('');
+      if (viewOnly && existingRating) {
+        setRating(existingRating);
+        setComment(existingComment || '');
+      } else {
+        setRating(0);
+        setComment('');
+      }
     }
-  }, [visible]);
+  }, [visible, viewOnly, existingRating, existingComment]);
 
   const handleStarPress = (value: number) => {
     setRating(value);
@@ -75,7 +86,9 @@ export default function RatingModal({
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <View style={styles.header}>
-            <Text style={styles.title}>Kullanıcıyı Oyla</Text>
+            <Text style={styles.title}>
+              {viewOnly ? 'Geçmiş Değerlendirme' : 'Kullanıcıyı Oyla'}
+            </Text>
             <Pressable onPress={onClose} style={styles.closeButton}>
               <X size={24} color={colors.text.primary} />
             </Pressable>
@@ -88,8 +101,9 @@ export default function RatingModal({
               {[1, 2, 3, 4, 5].map((value) => (
                 <Pressable
                   key={value}
-                  onPress={() => handleStarPress(value)}
+                  onPress={() => !viewOnly && handleStarPress(value)}
                   style={styles.starButton}
+                  disabled={viewOnly}
                 >
                   <Star
                     size={40}
@@ -114,42 +128,56 @@ export default function RatingModal({
                 : 'Çok İyi'}
             </Text>
 
-            <Text style={styles.label}>Yorum (İsteğe bağlı)</Text>
+            <Text style={styles.label}>Yorum {viewOnly ? '' : '(İsteğe bağlı)'}</Text>
             <TextInput
-              style={styles.commentInput}
-              placeholder="Yorumunuzu yazın..."
+              style={[styles.commentInput, viewOnly && styles.commentInputReadOnly]}
+              placeholder={viewOnly ? 'Yorum yok' : 'Yorumunuzu yazın...'}
               placeholderTextColor={colors.text.tertiary}
               multiline
               numberOfLines={4}
               value={comment}
-              onChangeText={setComment}
+              onChangeText={viewOnly ? undefined : setComment}
               maxLength={500}
+              editable={!viewOnly}
             />
-            <Text style={styles.charCount}>{comment.length}/500</Text>
+            {!viewOnly && <Text style={styles.charCount}>{comment.length}/500</Text>}
 
-            <Button
-              title="Kullanıcıyı Şikayet Et"
-              onPress={handleComplaint}
-              variant="danger"
-              style={styles.complaintButton}
-            />
+            {!viewOnly && (
+              <Button
+                title="Kullanıcıyı Şikayet Et"
+                onPress={handleComplaint}
+                variant="danger"
+                style={styles.complaintButton}
+              />
+            )}
           </ScrollView>
 
           <View style={styles.footer}>
-            <Button
-              title="İptal"
-              onPress={onClose}
-              variant="secondary"
-              style={styles.cancelButton}
-            />
-            <Button
-              title="Gönder"
-              onPress={handleSubmit}
-              variant="primary"
-              loading={loading}
-              disabled={rating === 0}
-              style={styles.submitButton}
-            />
+            {viewOnly ? (
+              <Button
+                title="Kapat"
+                onPress={onClose}
+                variant="primary"
+                style={styles.submitButton}
+              />
+            ) : (
+              <>
+                <Button
+                  title="İptal"
+                  onPress={onClose}
+                  variant="secondary"
+                  style={styles.cancelButton}
+                />
+                <Button
+                  title="Gönder"
+                  onPress={handleSubmit}
+                  variant="primary"
+                  loading={loading}
+                  disabled={rating === 0}
+                  style={styles.submitButton}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -232,6 +260,10 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     borderWidth: 1,
     borderColor: colors.neutral[200],
+  },
+  commentInputReadOnly: {
+    backgroundColor: colors.neutral[100],
+    color: colors.text.secondary,
   },
   charCount: {
     fontSize: typography.sizes.sm,

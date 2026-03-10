@@ -2,6 +2,24 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '@/constants/theme';
 import { X, MapPin, DollarSign, Calendar, Clock, Check } from 'lucide-react-native';
 
+// Süre formatlama fonksiyonu
+const formatDuration = (minutes: number): string => {
+  // 60'dan küçükse veya 60'ın katı değilse dakika olarak göster
+  if (minutes < 60 || minutes % 60 !== 0) {
+    return `${minutes} dk`;
+  }
+  
+  // 60'ın katı ve 60 veya daha büyükse saat formatında göster
+  const hours = minutes / 60;
+  if (hours === 1) {
+    return '1 saat';
+  } else if (hours % 1 === 0) {
+    return `${hours} saat`;
+  } else {
+    return `${hours} saat`;
+  }
+};
+
 interface LocationData {
   cityId: string;
   cityName: string;
@@ -153,7 +171,7 @@ export default function LocationTimeMenuModal({
                 <Text style={styles.menuTitle}>Oyun Süresi</Text>
                 <View style={styles.selectedInfo}>
                   <Check size={14} color={colors.success[500]} />
-                  <Text style={styles.selectedText}>{estimatedDuration} dakika</Text>
+                  <Text style={styles.selectedText}>{formatDuration(estimatedDuration)}</Text>
                 </View>
               </View>
             </TouchableOpacity>
