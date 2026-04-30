@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { X } from 'lucide-react-native';
 import Button from '@/components/Button';
 
@@ -24,6 +25,8 @@ export default function GenderPreferenceModal({
   onClose,
   onSave,
 }: GenderPreferenceModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [genderPreference, setGenderPreference] = useState(initialGenderPreference || 'herkes');
 
   const handleSave = () => {
@@ -83,7 +86,8 @@ export default function GenderPreferenceModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -104,7 +108,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   content: {
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   optionLabelSelected: {
@@ -149,4 +153,5 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: spacing.md,
   },
-});
+  });
+}

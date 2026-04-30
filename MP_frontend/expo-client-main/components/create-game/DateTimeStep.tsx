@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   dateTimeRow: {
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   dateTimeText: {
     fontSize: typography.sizes.md,
     color: colors.text.primary,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   timeControls: {
     gap: spacing.sm,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   timeButtonText: {
     color: colors.text.inverse,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   timeDisplay: {
     flex: 1,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: typography.sizes.lg,
     color: colors.text.primary,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   durationCard: {
     backgroundColor: colors.primary[50],
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: typography.sizes.md,
     color: colors.primary[700],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   button: {
     marginTop: spacing.lg,

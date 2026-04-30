@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { useMemo } from 'react';
 import { Calendar, MapPin, Zap } from 'lucide-react-native';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, borderRadius, typography } from '@/constants/theme';
 
 export type QuickFilterType = 'today' | 'tomorrow' | 'week' | 'nearby' | 'instant';
 
@@ -12,6 +14,8 @@ interface QuickFiltersProps {
 }
 
 export default function QuickFilters({ activeFilter, onFilterPress, nearbyCount, instantCount }: QuickFiltersProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const filters = [
     {
       id: 'today' as QuickFilterType,
@@ -65,7 +69,7 @@ export default function QuickFilters({ activeFilter, onFilterPress, nearbyCount,
             >
               <Icon
                 size={16}
-                color={isActive ? colors.neutral[0] : colors.primary[500]}
+                color={isActive ? colors.neutral[0] : colors.secondary[400]}
               />
               <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
                 {filter.label}
@@ -85,12 +89,13 @@ export default function QuickFilters({ activeFilter, onFilterPress, nearbyCount,
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
-    marginBottom: spacing.lg,
+    marginBottom: 0,
   },
   scrollContent: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 0,
     gap: spacing.sm,
   },
   filterButton: {
@@ -100,27 +105,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.background.secondary,
     borderWidth: 1,
-    borderColor: colors.primary[100],
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   filterButtonActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
+    borderColor: colors.secondary[400],
   },
   filterButtonPressed: {
     opacity: 0.7,
   },
   filterText: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary[500],
+    fontFamily: typography.fontFamily.semibold,
+    color: colors.text.secondary,
   },
   filterTextActive: {
     color: colors.neutral[0],
   },
   countBadge: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.full,
@@ -132,10 +137,11 @@ const styles = StyleSheet.create({
   },
   countText: {
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
-    color: colors.neutral[0],
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text.primary,
   },
   countTextActive: {
-    color: colors.primary[500],
+    color: colors.primary[900],
   },
-});
+  });
+}

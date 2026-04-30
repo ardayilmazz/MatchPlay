@@ -10,11 +10,14 @@ import {
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Star } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ratingService, Rating } from '@/services/ratingService';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserRatingsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const { user } = useAuth();
   const [ratings, setRatings] = useState<Rating[]>([]);
@@ -46,29 +49,29 @@ export default function UserRatingsScreen() {
     loadRatings();
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5].map((value) => (
-          <Star
-            key={value}
-            size={20}
-            color={value <= rating ? colors.secondary[500] : colors.neutral[300]}
-            fill={value <= rating ? colors.secondary[500] : 'transparent'}
-          />
-        ))}
-      </View>
-    );
-  };
+  const renderStars = (rating: number) => (
+    <View style={styles.starsContainer}>
+      {[1, 2, 3, 4, 5].map((value) => (
+        <Star
+          key={value}
+          size={18}
+          color={value <= rating ? colors.secondary[500] : colors.neutral[300]}
+          fill={value <= rating ? colors.secondary[500] : 'transparent'}
+        />
+      ))}
+    </View>
+  );
 
   const renderRating = ({ item }: { item: Rating }) => (
     <View style={styles.ratingCard}>
       <View style={styles.ratingHeader}>
-        <View>
-          <Text style={styles.raterName}>
+        <View style={styles.ratingHeaderLeft}>
+          <Text style={styles.raterName} numberOfLines={1} ellipsizeMode="tail">
             {item.rater.firstName} {item.rater.lastName}
           </Text>
-          <Text style={styles.gameTitle}>{item.game.title}</Text>
+          <Text style={styles.gameTitle} numberOfLines={2} ellipsizeMode="tail">
+            {item.game.title}
+          </Text>
         </View>
         {renderStars(item.rating)}
       </View>
@@ -135,16 +138,17 @@ export default function UserRatingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   header: {
     flexDirection: 'row',
@@ -153,7 +157,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -163,7 +167,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   headerRight: {
@@ -177,20 +181,27 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   ratingCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
+    overflow: 'hidden',
     ...shadows.md,
   },
   ratingHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  ratingHeaderLeft: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: spacing.xs,
   },
   raterName: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -200,7 +211,10 @@ const styles = StyleSheet.create({
   },
   starsContainer: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    flexShrink: 0,
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 3,
   },
   comment: {
     fontSize: typography.sizes.md,
@@ -222,7 +236,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginTop: spacing.md,
     marginBottom: spacing.sm,
@@ -233,3 +247,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+}

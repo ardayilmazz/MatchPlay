@@ -11,12 +11,15 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { complaintService } from '@/services/complaintService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
 
 export default function ComplaintScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const { user } = useAuth();
   const { reportedId, reportedName, gameId } = useLocalSearchParams<{
@@ -107,10 +110,11 @@ export default function ComplaintScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   header: {
     flexDirection: 'row',
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -129,7 +133,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   headerRight: {
@@ -141,19 +145,19 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
   reportedName: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.lg,
   },
   messageInput: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     fontSize: typography.sizes.md,
@@ -174,7 +178,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
     borderTopColor: colors.neutral[200],
   },
@@ -185,3 +189,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+}

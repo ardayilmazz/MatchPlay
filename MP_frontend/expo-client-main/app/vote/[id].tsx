@@ -21,7 +21,8 @@ import {
   Clock,
   User,
 } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { cancellationVoteService } from '@/services/cancellationVoteService';
 import { gameService } from '@/services/gameService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +30,8 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function VoteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [vote, setVote] = useState<any>(null);
   const [game, setGame] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -287,7 +290,8 @@ export default function VoteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
@@ -327,7 +331,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   gameCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     ...shadows.sm,
@@ -355,7 +359,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   organizerCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     ...shadows.sm,
@@ -442,4 +446,5 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
   },
-});
+  });
+}

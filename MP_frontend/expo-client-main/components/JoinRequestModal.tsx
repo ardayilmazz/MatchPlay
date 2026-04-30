@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     height: SCREEN_HEIGHT * 0.9,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   closeButton: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     flexDirection: 'row',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
     padding: spacing.md,
     borderRadius: borderRadius.md,
     gap: spacing.md,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.tertiary,
     marginBottom: 4,
   },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
   messageLabel: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.primary[700],
     marginBottom: spacing.xs,
   },

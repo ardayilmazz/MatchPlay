@@ -8,7 +8,8 @@ import {
   Pressable,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import Button from '@/components/Button';
 
 interface TimeInputModalProps {
@@ -24,6 +25,8 @@ export default function TimeInputModal({
   onClose,
   onSave,
 }: TimeInputModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [hour, setHour] = useState('');
   const [minute, setMinute] = useState('');
 
@@ -133,7 +136,8 @@ export default function TimeInputModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   modal: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     width: '100%',
@@ -151,7 +155,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: spacing.xl,
@@ -164,20 +168,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   timeInput: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
     borderWidth: 2,
     borderColor: colors.neutral[200],
     borderRadius: borderRadius.md,
     padding: spacing.md,
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     textAlign: 'center',
     minWidth: 80,
   },
   separator: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   footer: {
@@ -187,4 +191,5 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
   },
-});
+  });
+}

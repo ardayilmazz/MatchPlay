@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import Button from '@/components/Button';
 import Picker from '@/components/Picker';
 import { MapPin, Clock, Calendar, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -55,6 +56,8 @@ export default function LocationTimeStep({
   expectsFee,
   onNext,
 }: LocationTimeStepProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [cityId, setCityId] = useState(initialCityId);
   const [districtId, setDistrictId] = useState(initialDistrictId);
   const [venueId, setVenueId] = useState(initialVenueId);
@@ -502,13 +505,14 @@ export default function LocationTimeStep({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -530,7 +534,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   feeToggle: {
@@ -556,13 +560,13 @@ const styles = StyleSheet.create({
     borderColor: colors.primary[500],
   },
   checkmark: {
-    color: colors.background.primary,
+    color: colors.text.inverse,
     fontSize: 16,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
   },
   feeToggleText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   feeInputContainer: {
@@ -615,7 +619,7 @@ const styles = StyleSheet.create({
   },
   durationValue: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.primary[500],
   },
   durationValueDisabled: {
@@ -635,12 +639,12 @@ const styles = StyleSheet.create({
   },
   unknownDurationText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   unknownDurationTextActive: {
     color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   button: {
     marginTop: spacing.lg,
@@ -666,7 +670,7 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   timeRow: {
@@ -677,7 +681,7 @@ const styles = StyleSheet.create({
   },
   timeDisplay: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     flex: 1,
   },
@@ -689,7 +693,7 @@ const styles = StyleSheet.create({
   },
   timeButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.neutral[0],
   },
   hint: {
@@ -720,7 +724,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   calendar: {
@@ -735,7 +739,7 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'center',
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.secondary,
   },
   daysGrid: {
@@ -768,7 +772,7 @@ const styles = StyleSheet.create({
   },
   dayTextSelected: {
     color: colors.background.primary,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
   },
   timeSelector: {
     marginTop: spacing.lg,
@@ -776,7 +780,7 @@ const styles = StyleSheet.create({
   },
   timeSelectorLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   timeControls: {
@@ -791,5 +795,6 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
   },
-});
+  });
+}
 

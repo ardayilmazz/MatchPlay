@@ -1,11 +1,34 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Pressable,
+  Alert,
+  Image,
+} from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Award, MessageCircle, UserPlus, User as UserIcon } from 'lucide-react-native';
-import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ArrowLeft,
+  MessageCircle,
+  UserPlus,
+  User as UserIcon,
+} from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, borderRadius, typography, shadows } from '@/constants/theme';
 import type { Game, User } from '@/types';
+import { gameService } from '@/services/gameService';
+import { gameRequestService } from '@/services/gameRequestService';
+import { waitlistService } from '@/services/waitlistService';
+import { useAuth } from '@/contexts/AuthContext';
+import Button from '@/components/Button';
+import CreatorProfileModal from '@/components/CreatorProfileModal';
+import AppBackground from '@/components/AppBackground';
+import { resolveSportImageOrNull } from '@/utils/sportImages';
 
-// Temporary local type definitions (until TypeScript resolves the import issue)
 interface GameRequest {
   id: string;
   gameId: string;
@@ -24,17 +47,30 @@ interface WaitlistEntry {
   status: 'waiting' | 'invited' | 'expired' | 'cancelled';
   createdAt: string;
 }
-import { gameService } from '@/services/gameService';
-import { gameRequestService } from '@/services/gameRequestService';
-import { waitlistService } from '@/services/waitlistService';
-import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/Button';
-import CreatorProfileModal from '@/components/CreatorProfileModal';
+
+const BADGE_MUTED_BLUE = '#4A69BD';
+
+function headlineText(game: Game): string {
+  const t = game.title?.trim();
+  if (t) return t;
+  const d = (game.description && String(game.description).trim()) || '';
+  if (d) return d;
+  return '';
+}
+
+function locationLine(game: Game): string {
+  const parts = [game.districtName, game.venueAddress, game.venueName].filter(
+    (p) => typeof p === 'string' && p.trim().length > 0
+  ) as string[];
+  return [...new Set(parts)].join(', ');
+}
 
 export default function GameDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -45,14 +81,13 @@ export default function GameDetailsScreen() {
   const [showCreatorModal, setShowCreatorModal] = useState(false);
 
   useEffect(() => {
-    if (id && user) {
-      loadGameDetails();
-    }
-  }, [id, user]);
+    if (!id) return;
+    loadGameDetails();
+  }, [id]);
 
-  // game state'i değiştiğinde kullanıcı durumunu kontrol et
   useEffect(() => {
     if (game && user) {
+      setIsCreator(game.creatorId === user.id);
       checkUserStatus();
     }
   }, [game, user]);
@@ -62,12 +97,9 @@ export default function GameDetailsScreen() {
       setLoading(true);
       const gameData = await gameService.getGameById(id!);
       setGame(gameData);
-
-      if (user && gameData) {
-        setIsCreator(gameData.creatorId === user.id);
-      }
-    } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Oyun yüklenirken hata oluştu');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Oyun yüklenirken hata oluştu';
+      Alert.alert('Hata', msg);
       router.back();
     } finally {
       setLoading(false);
@@ -84,10 +116,9 @@ export default function GameDetailsScreen() {
       const waitlist = await waitlistService.getWaitlistEntry(id, user.token);
       setWaitlistEntry(waitlist);
 
-      // Kullanıcı oyuna katılmış mı kontrol et (game.acceptedPlayers)
-      if (game && game.acceptedPlayers && Array.isArray(game.acceptedPlayers)) {
-        const isAccepted = game.acceptedPlayers.some((p: any) => {
-          const playerId = typeof p === 'object' && p._id ? p._id : p;
+      if (game.acceptedPlayers && Array.isArray(game.acceptedPlayers)) {
+        const isAccepted = game.acceptedPlayers.some((p: { _id?: string } | string) => {
+          const playerId = typeof p === 'object' && p && '_id' in p ? p._id : p;
           return playerId === user.id;
         });
         setIsParticipant(isAccepted);
@@ -105,8 +136,9 @@ export default function GameDetailsScreen() {
       await gameRequestService.sendJoinRequest(game.id, user.token);
       Alert.alert('Başarılı', 'Katılım isteğiniz gönderildi');
       await checkUserStatus();
-    } catch (error: any) {
-      Alert.alert('Hata', error.message || 'İstek gönderilirken hata oluştu');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'İstek gönderilirken hata oluştu';
+      Alert.alert('Hata', msg);
     } finally {
       setActionLoading(false);
     }
@@ -120,9 +152,10 @@ export default function GameDetailsScreen() {
       await waitlistService.addToWaitlist(game.id, user.token);
       Alert.alert('Başarılı', 'Bekleme listesine eklendiniz');
       await checkUserStatus();
-      await loadGameDetails(); // Oyun bilgilerini yenile
-    } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Bekleme listesine eklenirken hata oluştu');
+      await loadGameDetails();
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Bekleme listesine eklenirken hata oluştu';
+      Alert.alert('Hata', msg);
     } finally {
       setActionLoading(false);
     }
@@ -136,8 +169,9 @@ export default function GameDetailsScreen() {
       await gameRequestService.cancelJoinRequest(userRequest.id, user.token);
       Alert.alert('Başarılı', 'İsteğiniz iptal edildi');
       await checkUserStatus();
-    } catch (error: any) {
-      Alert.alert('Hata', error.message || 'İstek iptal edilirken hata oluştu');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'İstek iptal edilirken hata oluştu';
+      Alert.alert('Hata', msg);
     } finally {
       setActionLoading(false);
     }
@@ -146,33 +180,25 @@ export default function GameDetailsScreen() {
   const handleLeaveGame = async () => {
     if (!game || !user?.token) return;
 
-    Alert.alert(
-      'Oyundan Ayrıl',
-      'Bu oyundan ayrılmak istediğinizden emin misiniz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Ayrıl',
-          style: 'destructive',
-          onPress: async () => {
-            setActionLoading(true);
-            try {
-              await gameRequestService.leaveGame(game.id, user.token!);
-              Alert.alert('Başarılı', 'Oyundan ayrıldınız', [
-                {
-                  text: 'Tamam',
-                  onPress: () => router.back(),
-                },
-              ]);
-            } catch (error: any) {
-              Alert.alert('Hata', error.message || 'Oyundan ayrılırken hata oluştu');
-            } finally {
-              setActionLoading(false);
-            }
-          },
+    Alert.alert('Oyundan Ayrıl', 'Bu oyundan ayrılmak istediğinizden emin misiniz?', [
+      { text: 'İptal', style: 'cancel' },
+      {
+        text: 'Ayrıl',
+        style: 'destructive',
+        onPress: async () => {
+          setActionLoading(true);
+          try {
+            await gameRequestService.leaveGame(game.id, user.token!);
+            Alert.alert('Başarılı', 'Oyundan ayrıldınız', [{ text: 'Tamam', onPress: () => router.back() }]);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Oyundan ayrılırken hata oluştu';
+            Alert.alert('Hata', msg);
+          } finally {
+            setActionLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleRemoveFromWaitlist = async () => {
@@ -183,9 +209,11 @@ export default function GameDetailsScreen() {
       await waitlistService.removeFromWaitlist(waitlistEntry.id, user.token);
       Alert.alert('Başarılı', 'Bekleme listesinden çıkarıldınız');
       setWaitlistEntry(null);
-      await loadGameDetails(); // Oyun bilgilerini yenile
-    } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Bekleme listesinden çıkarılırken hata oluştu');
+      await loadGameDetails();
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Bekleme listesinden çıkarılırken hata oluştu';
+      Alert.alert('Hata', msg);
     } finally {
       setActionLoading(false);
     }
@@ -194,16 +222,7 @@ export default function GameDetailsScreen() {
   const handleManageRequests = () => {
     router.push({
       pathname: `/my/games/${id}/requests` as any,
-      params: { from: 'notification' }
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+      params: { from: 'notification' },
     });
   };
 
@@ -212,19 +231,21 @@ export default function GameDetailsScreen() {
     return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const getSkillLevelLabel = (level: string) => {
-    const labels: Record<string, string> = {
-      everyone: 'Herkes',
-      beginner: 'Başlangıç',
-      intermediate: 'Orta',
-      advanced: 'İleri',
-      competitive: 'Rekabetçi',
-    };
-    return labels[level] || level;
-  };
+  const heroSource = useMemo(
+    () => (game?.sportName ? resolveSportImageOrNull(game.sportName) : null),
+    [game?.sportName]
+  );
+
+  const headlineDisplay = game ? headlineText(game) : '';
+  const locationDisplay = game ? locationLine(game).trim() : '';
 
   const renderActionButton = () => {
-    if (!game || !user) return null;
+    if (!game) return null;
+    if (!user) {
+      return (
+        <Text style={styles.loginHint}>Katılmak için giriş yapın.</Text>
+      );
+    }
 
     if (game.creatorId === user.id) {
       return (
@@ -233,6 +254,7 @@ export default function GameDetailsScreen() {
           onPress={handleManageRequests}
           variant="primary"
           leftIcon={<MessageCircle size={20} color={colors.neutral[0]} />}
+          style={styles.actionBtnFull}
         />
       );
     }
@@ -244,6 +266,7 @@ export default function GameDetailsScreen() {
           onPress={handleLeaveGame}
           variant="danger"
           loading={actionLoading}
+          style={styles.actionBtnFull}
         />
       );
     }
@@ -256,6 +279,7 @@ export default function GameDetailsScreen() {
             onPress={handleCancelRequest}
             variant="danger"
             loading={actionLoading}
+            style={styles.actionBtnFull}
           />
         );
       }
@@ -266,58 +290,56 @@ export default function GameDetailsScreen() {
             onPress={handleLeaveGame}
             variant="danger"
             loading={actionLoading}
+            style={styles.actionBtnFull}
           />
         );
       }
       if (userRequest.status === 'rejected') {
         return (
-          <View style={[styles.statusBadge, { backgroundColor: colors.error[100] }]}>
-            <Text style={[styles.statusText, { color: colors.error[700] }]}>İstek Reddedildi</Text>
+          <View style={styles.inlineStatusBadge}>
+            <Text style={styles.inlineStatusText}>İstek Reddedildi</Text>
           </View>
         );
       }
     }
 
-    // Bekleme listesindeyse ve oyun açıksa, hem listeden çık hem de katılma isteği gönder butonları göster
     if (waitlistEntry && game.status === 'open') {
       return (
-        <View style={styles.actionContainer}>
-          <View style={styles.waitlistInfo}>
-            <Text style={styles.waitlistText}>
-              Bekleme Listesi - Sıra: {waitlistEntry.position}
-            </Text>
+        <View style={styles.actionStack}>
+          <View style={[styles.waitlistBanner, { marginBottom: spacing.sm }]}>
+            <Text style={styles.waitlistBannerText}>Bekleme listesi — sıra: {waitlistEntry.position}</Text>
           </View>
           <Button
-            title="Katılma İsteği Gönder"
+            title="Katıl"
             onPress={handleSendRequest}
             variant="primary"
             loading={actionLoading}
             leftIcon={<UserPlus size={20} color={colors.neutral[0]} />}
+            style={styles.actionBtnSpaced}
           />
           <Button
             title="Listeden Çık"
             onPress={handleRemoveFromWaitlist}
             variant="secondary"
             loading={actionLoading}
+            style={styles.actionBtnFull}
           />
         </View>
       );
     }
 
-    // Bekleme listesindeyse ama oyun hala doluysa
     if (waitlistEntry) {
       return (
-        <View style={styles.actionContainer}>
-          <View style={styles.waitlistInfo}>
-            <Text style={styles.waitlistText}>
-              Bekleme Listesi - Sıra: {waitlistEntry.position}
-            </Text>
+        <View style={styles.actionStack}>
+          <View style={[styles.waitlistBanner, { marginBottom: spacing.sm }]}>
+            <Text style={styles.waitlistBannerText}>Bekleme listesi — sıra: {waitlistEntry.position}</Text>
           </View>
           <Button
             title="Listeden Çık"
             onPress={handleRemoveFromWaitlist}
             variant="secondary"
             loading={actionLoading}
+            style={styles.actionBtnFull}
           />
         </View>
       );
@@ -331,6 +353,7 @@ export default function GameDetailsScreen() {
           variant="secondary"
           loading={actionLoading}
           leftIcon={<UserPlus size={20} color={colors.primary[500]} />}
+          style={styles.actionBtnFull}
         />
       );
     }
@@ -338,11 +361,12 @@ export default function GameDetailsScreen() {
     if (game.status === 'open') {
       return (
         <Button
-          title="Katılma İsteği Gönder"
+          title="Katıl"
           onPress={handleSendRequest}
           variant="primary"
           loading={actionLoading}
           leftIcon={<UserPlus size={20} color={colors.neutral[0]} />}
+          style={styles.actionBtnFull}
         />
       );
     }
@@ -350,272 +374,243 @@ export default function GameDetailsScreen() {
     return null;
   };
 
-  if (loading || !game) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-      </View>
-    );
-  }
-
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Oyun Detayı</Text>
-          <View style={styles.headerRight} />
-        </View>
-
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.mainCard}>
-            <View style={styles.titleSection}>
-              <Text style={styles.sportName}>{game.sportName}</Text>
-              <View
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor:
-                      game.status === 'full'
-                        ? colors.error[500]
-                        : game.status === 'open'
-                        ? colors.success[500]
-                        : colors.neutral[400],
-                  },
-                ]}
-              >
-                <Text style={styles.badgeText}>
-                  {game.status === 'full' ? 'Dolu' : game.status === 'open' ? 'Açık' : 'Tamamlandı'}
-                </Text>
-              </View>
+      <AppBackground>
+        <SafeAreaView style={styles.safe} edges={['top']}>
+          {loading || !game ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.secondary[400]} />
             </View>
-
-            <View style={styles.infoSection}>
-              <View style={styles.infoRow}>
-                <Calendar size={20} color={colors.text.secondary} />
-                <Text style={styles.infoText}>{formatDate(game.startTime)}</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Clock size={20} color={colors.text.secondary} />
-                <Text style={styles.infoText}>
-                  {formatTime(game.startTime)} - {formatTime(game.endTime)}
-                </Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <MapPin size={20} color={colors.text.secondary} />
-                <View style={styles.locationInfo}>
-                  <Text style={styles.infoText}>{game.venueName}</Text>
-                  <Text style={styles.addressText}>
-                    {game.venueAddress}, {game.districtName}, {game.cityName}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Users size={20} color={colors.text.secondary} />
-                <Text style={styles.infoText}>
-                  {game.currentPlayers}/{game.totalPlayers} Oyuncu
-                </Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Award size={20} color={colors.text.secondary} />
-                <Text style={styles.infoText}>{getSkillLevelLabel(game.skillLevel)}</Text>
-              </View>
-            </View>
-
-            {game.description && (
-              <View style={styles.descriptionSection}>
-                <Text style={styles.sectionTitle}>Açıklama</Text>
-                <Text style={styles.descriptionText}>{game.description}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Oyun Kurucu Bilgileri Butonu */}
-          {!isCreator && (game as any).creator && (
-            <View style={styles.creatorSection}>
+          ) : (
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               <Pressable
-                style={styles.creatorButton}
-                onPress={() => setShowCreatorModal(true)}
+                onPress={() => router.back()}
+                style={({ pressed }) => [styles.backSquare, pressed && styles.backSquarePressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Geri"
               >
-                <View style={styles.creatorButtonContent}>
-                  <UserIcon size={20} color={colors.primary[500]} />
-                  <Text style={styles.creatorButtonText}>Oyun Kurucu Bilgileri</Text>
-                </View>
+                <ArrowLeft size={22} color={colors.secondary[400]} strokeWidth={2.5} />
               </Pressable>
-            </View>
+
+              <View style={styles.shellCard}>
+                {heroSource ? (
+                  <Image source={heroSource} style={styles.heroImage} resizeMode="cover" />
+                ) : null}
+
+                <View style={styles.infoCard}>
+                  <View style={[styles.typeBadge, { backgroundColor: BADGE_MUTED_BLUE }]}>
+                    <Text style={styles.typeBadgeText}>{game.sportName}</Text>
+                  </View>
+
+                  {headlineDisplay ? <Text style={styles.headline}>{headlineDisplay}</Text> : null}
+
+                  <Text style={styles.timeRange}>
+                    {formatTime(game.startTime)} - {formatTime(game.endTime)}
+                  </Text>
+
+                  {locationDisplay ? (
+                    <Text style={styles.locationText} numberOfLines={4}>
+                      {locationDisplay}
+                    </Text>
+                  ) : null}
+
+                  <Text style={styles.capacityLarge}>
+                    {game.currentPlayers}/{game.totalPlayers}
+                  </Text>
+
+                  <View style={styles.actionSection}>{renderActionButton()}</View>
+                </View>
+              </View>
+
+              {!isCreator && (game as Game & { creator?: unknown }).creator ? (
+                <Pressable
+                  style={styles.creatorLink}
+                  onPress={() => setShowCreatorModal(true)}
+                  accessibilityRole="button"
+                >
+                  <View style={{ marginRight: spacing.sm }}>
+                    <UserIcon size={18} color={colors.secondary[400]} />
+                  </View>
+                  <Text style={styles.creatorLinkText}>Oyun kurucu bilgileri</Text>
+                </Pressable>
+              ) : null}
+            </ScrollView>
           )}
+        </SafeAreaView>
+      </AppBackground>
 
-          <View style={styles.actionSection}>{renderActionButton()}</View>
-        </ScrollView>
-      </View>
-
-      {/* Creator Profile Modal */}
       <CreatorProfileModal
         visible={showCreatorModal}
-        creator={(game as any)?.creator || null}
+        creator={(game as Game & { creator?: User })?.creator ?? null}
         onClose={() => setShowCreatorModal(false)}
       />
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.neutral[50],
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[50],
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  headerTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
-    color: colors.text.primary,
-  },
-  headerRight: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  mainCard: {
-    backgroundColor: colors.neutral[0],
-    margin: spacing.md,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    ...shadows.md,
-  },
-  titleSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  sportName: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    flex: 1,
-  },
-  badge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  badgeText: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.neutral[0],
-  },
-  infoSection: {
-    gap: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  infoText: {
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  locationInfo: {
-    flex: 1,
-  },
-  addressText: {
-    fontSize: typography.sizes.sm,
-    color: colors.text.tertiary,
-    marginTop: 4,
-  },
-  descriptionSection: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
-  },
-  sectionTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  descriptionText: {
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-    lineHeight: typography.sizes.md * typography.lineHeights.normal,
-  },
-  creatorSection: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-  },
-  creatorButton: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    ...shadows.sm,
-  },
-  creatorButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  creatorButtonText: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary[500],
-  },
-  actionSection: {
-    padding: spacing.md,
-  },
-  actionContainer: {
-    gap: spacing.md,
-  },
-  waitlistInfo: {
-    backgroundColor: colors.secondary[100],
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  waitlistText: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.secondary[700],
-  },
-  statusBadge: {
-    backgroundColor: colors.success[100],
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  statusText: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.success[700],
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: 280,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.xxl,
+    },
+    backSquare: {
+      alignSelf: 'flex-start',
+      marginBottom: spacing.md,
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.md,
+      borderWidth: 1.5,
+      borderColor: `${colors.secondary[400]}cc`,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    backSquarePressed: {
+      opacity: 0.85,
+    },
+    shellCard: {
+      borderRadius: borderRadius.cardLarge,
+      borderWidth: 1,
+      borderColor: 'rgba(130, 170, 255, 0.35)',
+      backgroundColor: colors.background.secondary,
+      padding: spacing.lg,
+      ...shadows.md,
+    },
+    heroImage: {
+      width: '100%',
+      height: 200,
+      borderRadius: borderRadius.lg,
+      marginBottom: spacing.lg,
+      backgroundColor: colors.primary[900],
+    },
+    infoCard: {
+      alignItems: 'center',
+      backgroundColor: colors.primary[700],
+      borderRadius: borderRadius.cardLarge,
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.lg,
+      width: '100%',
+    },
+    typeBadge: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      borderRadius: borderRadius.md,
+      marginBottom: spacing.md,
+    },
+    typeBadgeText: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.semibold,
+      color: colors.neutral[0],
+    },
+    headline: {
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.primary,
+      textAlign: 'center',
+      marginBottom: spacing.md,
+      lineHeight: typography.sizes.md * typography.lineHeights.relaxed,
+    },
+    timeRange: {
+      fontSize: typography.sizes.xl,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    locationText: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.neutral[0],
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+      opacity: 0.95,
+    },
+    capacityLarge: {
+      fontSize: typography.sizes.xxxl,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+    actionSection: {
+      width: '100%',
+      alignItems: 'stretch',
+    },
+    actionBtnFull: {
+      alignSelf: 'stretch',
+      width: '100%',
+    },
+    actionBtnSpaced: {
+      alignSelf: 'stretch',
+      width: '100%',
+      marginBottom: spacing.sm,
+    },
+    actionStack: {
+      width: '100%',
+    },
+    waitlistBanner: {
+      backgroundColor: 'rgba(255,121,88,0.15)',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: borderRadius.md,
+    },
+    waitlistBannerText: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.medium,
+      color: colors.secondary[300],
+      textAlign: 'center',
+    },
+    inlineStatusBadge: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: borderRadius.md,
+      backgroundColor: 'rgba(211,47,47,0.2)',
+      width: '100%',
+      alignItems: 'center',
+    },
+    inlineStatusText: {
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.semibold,
+      color: colors.error[400],
+      textAlign: 'center',
+    },
+    loginHint: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+      textAlign: 'center',
+    },
+    creatorLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    creatorLinkText: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.medium,
+      color: colors.secondary[400],
+    },
+  });
+}

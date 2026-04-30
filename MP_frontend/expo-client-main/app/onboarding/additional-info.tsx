@@ -12,15 +12,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { sports, skillLevels } from '@/services/mockData';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Picker from '@/components/Picker';
+import AppBackground from '@/components/AppBackground';
 
 export default function AdditionalInfoScreen() {
   const { user, updateUser } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [bio, setBio] = useState(user?.bio || '');
   const [selectedSports, setSelectedSports] = useState<string[]>(user?.sports || []);
   const [skillLevel, setSkillLevel] = useState(user?.skillLevel || '');
@@ -63,6 +67,7 @@ export default function AdditionalInfoScreen() {
   };
 
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -138,13 +143,15 @@ export default function AdditionalInfoScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   keyboardView: {
     flex: 1,
@@ -161,7 +168,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -172,13 +179,13 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 4,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
   },
   form: {
     flex: 1,
@@ -193,7 +200,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
     marginBottom: spacing.md,
   },
@@ -206,21 +213,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.primary[900],
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   sportChipSelected: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
+    borderColor: colors.secondary[400],
   },
   sportChipText: {
     fontSize: typography.sizes.sm,
     color: colors.text.primary,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   sportChipTextSelected: {
-    color: colors.text.inverse,
+    color: colors.neutral[0],
   },
   completeButton: {
     marginTop: spacing.lg,
@@ -233,6 +240,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
-});
+  });
+}

@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   },
   editableItemDisabled: {
     opacity: 0.6,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   infoBanner: {
     backgroundColor: colors.secondary[50],
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   nonEditableItem: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
@@ -841,7 +841,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
     borderTopColor: colors.neutral[200],
   },

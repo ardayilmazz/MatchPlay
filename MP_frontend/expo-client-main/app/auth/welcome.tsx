@@ -1,16 +1,23 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import Button from '@/components/Button';
+import AppBackground from '@/components/AppBackground';
 
 export default function WelcomeScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
-            <Text style={styles.logoText}>MatchPlay</Text>
+            <Text style={styles.logoText} numberOfLines={1} adjustsFontSizeToFit>
+              MatchPlay
+            </Text>
           </View>
         </View>
 
@@ -37,13 +44,15 @@ export default function WelcomeScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
@@ -56,17 +65,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 140,
+    height: 140,
     borderRadius: borderRadius.xxl,
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoText: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.inverse,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.neutral[0],
   },
   textContainer: {
     alignItems: 'center',
@@ -74,7 +83,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: spacing.md,
@@ -91,4 +100,5 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
   },
-});
+  });
+}

@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useMemo } from 'react';
 import { Calendar, MapPin, Users, Clock, Award } from 'lucide-react-native';
-import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, borderRadius, typography, shadows } from '@/constants/theme';
 import { Game } from '@/types/index';
 
 interface GameCardProps {
@@ -9,6 +11,8 @@ interface GameCardProps {
 }
 
 export default function GameCard({ game, onPress }: GameCardProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
@@ -32,7 +36,7 @@ export default function GameCard({ game, onPress }: GameCardProps) {
 
   const getStatusColor = () => {
     if (game.status === 'full') return colors.error[500];
-    if (game.currentPlayers >= game.totalPlayers * 0.8) return colors.secondary[500];
+    if (game.currentPlayers >= game.totalPlayers * 0.8) return colors.secondary[400];
     return colors.success[500];
   };
 
@@ -112,13 +116,16 @@ export default function GameCard({ game, onPress }: GameCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   card: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.card,
+    padding: spacing.lg,
     marginHorizontal: spacing.md,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
     ...shadows.md,
   },
   cardPressed: {
@@ -142,22 +149,22 @@ const styles = StyleSheet.create({
   },
   lobbyTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   sportName: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.secondary,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.md,
   },
   statusText: {
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.neutral[0],
   },
   dateContainer: {
@@ -167,6 +174,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: typography.sizes.sm,
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
   },
   infoContainer: {
@@ -179,11 +187,13 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: typography.sizes.sm,
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
     flex: 1,
   },
   description: {
     fontSize: typography.sizes.sm,
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.tertiary,
     marginTop: spacing.xs,
     lineHeight: typography.sizes.sm * typography.lineHeights.normal,
@@ -192,7 +202,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral[200],
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   playersContainer: {
     flexDirection: 'row',
@@ -201,7 +211,8 @@ const styles = StyleSheet.create({
   },
   playersText: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.primary[500],
+    fontFamily: typography.fontFamily.medium,
+    color: colors.secondary[400],
   },
-});
+  });
+}

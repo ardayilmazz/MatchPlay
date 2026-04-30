@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import Button from '@/components/Button';
 import { GameSessionDraft } from '@/services/gameService';
 import {
@@ -46,6 +47,8 @@ export default function NewSummaryStep({
   onPublish,
   isPublishing,
 }: NewSummaryStepProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const handlePublish = () => {
     Alert.alert(
       'Oyunu Yayınla',
@@ -256,13 +259,14 @@ export default function NewSummaryStep({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -290,7 +294,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   cardContent: {
@@ -303,7 +307,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.secondary,
   },
   value: {
@@ -322,5 +326,6 @@ const styles = StyleSheet.create({
   publishButton: {
     flex: 2,
   },
-});
+  });
+}
 

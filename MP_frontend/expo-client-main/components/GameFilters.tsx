@@ -444,13 +444,13 @@ export default function GameFiltersModal({
               <View style={styles.calendar}>
                 <View style={styles.monthHeader}>
                   <Pressable onPress={() => changeMonth('prev')}>
-                    <ChevronLeft size={24} color={colors.primary[500]} />
+                    <ChevronLeft size={24} color={colors.secondary[400]} />
                   </Pressable>
                   <Text style={styles.monthTitle}>
                     {TURKISH_MONTHS[tempMonth]} {tempYear}
                   </Text>
                   <Pressable onPress={() => changeMonth('next')}>
-                    <ChevronRight size={24} color={colors.primary[500]} />
+                    <ChevronRight size={24} color={colors.secondary[400]} />
                   </Pressable>
                 </View>
 
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   closeButton: {
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.md,
   },
@@ -705,8 +705,8 @@ const styles = StyleSheet.create({
   },
   categoryButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.primary[500],
+    fontFamily: typography.fontFamily.medium,
+    color: colors.secondary[400],
     textAlign: 'center',
   },
   backButton: {
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: typography.sizes.sm,
-    color: colors.primary[500],
+    color: colors.secondary[400],
   },
   filterButton: {
     padding: spacing.md,
@@ -726,8 +726,8 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.primary[500],
+    fontFamily: typography.fontFamily.medium,
+    color: colors.secondary[400],
     textAlign: 'center',
   },
   backCategoryButton: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
   },
   subSectionTitle: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
@@ -777,8 +777,8 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral[200],
   },
   chipActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
+    borderColor: colors.secondary[400],
   },
   chipText: {
     fontSize: typography.sizes.sm,
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: colors.neutral[0],
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   dateRangeContainer: {
     gap: spacing.sm,
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
   },
   dateButtonValue: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   calendar: {
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
   },
   monthTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   daysGrid: {
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     width: '14.28%',
     textAlign: 'center',
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.secondary,
     paddingVertical: spacing.xs,
   },
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   },
   toggleButtonActive: {
     backgroundColor: colors.primary[50],
-    borderColor: colors.primary[500],
+    borderColor: colors.secondary[400],
   },
   toggleButtonText: {
     fontSize: typography.sizes.md,
@@ -876,8 +876,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   toggleButtonTextActive: {
-    color: colors.primary[500],
-    fontWeight: typography.weights.medium,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.medium,
   },
   footer: {
     flexDirection: 'row',

@@ -1,156 +1,123 @@
-export const lightColors = {
+/**
+ * MatchPlay Design System
+ * Modern Dark UI, High-Contrast Accents
+ * Core Font: Montserrat
+ */
+
+export const darkColors = {
   primary: {
-    50: '#E6F2FF',
-    100: '#BAE0FF',
-    200: '#8FCFFF',
-    300: '#5CB8FF',
-    400: '#2E9FF2',
-    500: '#0B7FE6',
-    600: '#0568CC',
-    700: '#0353A3',
-    800: '#023F7A',
-    900: '#012B52',
+    // Açık mavilerden koyu lacivertlere uzanan ana paletin
+    50: '#BFD7FF',
+    100: '#83B2FF',
+    200: '#5797FF',
+    300: '#5673C8',
+    400: '#415FB4',
+    500: '#2A499F', // Vurgu Mavisi (Main Color kutusundan)
+    600: '#192E68',
+    700: '#132456', // Kart ve Panel Arka Planları
+    800: '#0C183A', // En Koyu Lacivert (App Background)
+    900: '#060C1D',
   },
   secondary: {
-    50: '#FFF5E6',
-    100: '#FFE4BA',
-    200: '#FFD48F',
-    300: '#FFC25C',
-    400: '#FFB12E',
-    500: '#FF9F0B',
-    600: '#E68A05',
-    700: '#CC7603',
-    800: '#A36002',
-    900: '#7A4801',
+    // Turuncu aksan renklerin (Butonlar ve İkonlar için)
+    50: '#FFDBCF',
+    100: '#FFC5B5',
+    200: '#FFB09D',
+    300: '#FF957B',
+    400: '#FF7958', // Ana Buton Turuncusu (Main Color kutusundan)
+    500: '#E35C3B', // Buton Hover/Active
+    600: '#C34728',
+    700: '#94351E',
+    800: '#6A2514',
+    900: '#40150A',
+  },
+  neutral: {
+    0: '#FFFFFF', // Saf Beyaz (Metinler)
+    50: '#F8F9FA',
+    100: '#E0E0E0',
+    200: '#BDBDBD',
+    300: '#9E9E9E', // Pasif Metinler / Placeholder
+    400: '#757575',
+    500: '#616161',
+    600: '#424242',
+    700: '#3D3D3D', // İkincil kartlar için panel grisi (Figma notundan)
+    800: '#212121',
+    900: '#0A0A0A',
+    950: '#000000',
+  },
+  background: {
+    // Uygulaman Dark-first olduğu için arka planlar direkt koyu tonlar
+    primary: '#0C183A',   // 800 - Ana tam ekran arka plan
+    secondary: '#132456', // 700 - Kartlar ve Bottom Tab
+    tertiary: '#192E68',  // 600 - Hover veya üst katmanlar
+  },
+  text: {
+    primary: '#FFFFFF',   // Ana başlıklar
+    secondary: '#BDBDBD', // Alt metinler (örn: 2km Çevrede)
+    tertiary: '#9E9E9E',  // En pasif metinler
+    inverse: '#0C183A',   // Açık renk buton içindeki metinler
+  },
+  error: {
+    50: '#FFEBEE',
+    100: '#FFCDD2',
+    200: '#EF9A9A',
+    300: '#E57373',
+    400: '#EF5350',
+    500: '#D32F2F',
+    600: '#C62828',
+    700: '#B71C1C',
+    800: '#8F1B14',
+    900: '#6A1410',
   },
   success: {
-    50: '#EEFBF4',
-    100: '#D4F4E2',
-    200: '#A8EBCA',
-    300: '#6FDC9F',
-    400: '#3AC778',
+    50: '#E8F5E9',
+    100: '#C8E6C9',
+    200: '#A5D6A7',
+    300: '#81C784',
+    400: '#66BB6A',
     500: '#12B76A',
     600: '#09965A',
     700: '#06764A',
     800: '#045C3A',
     900: '#03422B',
   },
-  error: {
-    50: '#FFF1F0',
-    100: '#FFE0DE',
-    200: '#FFBCB8',
-    300: '#FF938C',
-    400: '#FF6B60',
-    500: '#F04438',
-    600: '#D92D20',
-    700: '#B42318',
-    800: '#8F1B14',
-    900: '#6A1410',
-  },
+};
+
+// Açık tema: mevcut ekranlar (ana sayfa dışı) ve tema tercihi için yapısal uyum
+export const lightColors = {
+  primary: darkColors.primary,
+  secondary: darkColors.secondary,
   neutral: {
     0: '#FFFFFF',
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E5E5',
-    300: '#D4D4D4',
-    400: '#A3A3A3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-    950: '#0A0A0A',
+    50: '#F8F9FA',
+    100: '#F1F3F4',
+    200: '#E0E0E0',
+    300: '#BDBDBD',
+    400: '#9E9E9E',
+    500: '#757575',
+    600: '#616161',
+    700: '#424242',
+    800: '#212121',
+    900: '#0A0A0A',
+    950: '#000000',
   },
   background: {
-    primary: '#FFFFFF',
-    secondary: '#FAFAFA',
-    tertiary: '#F5F5F5',
+    primary: '#F8F9FA',
+    secondary: '#FFFFFF',
+    tertiary: '#F1F3F4',
   },
   text: {
-    primary: '#171717',
-    secondary: '#525252',
-    tertiary: '#A3A3A3',
+    primary: '#0A0A0A',
+    secondary: '#424242',
+    tertiary: '#757575',
     inverse: '#FFFFFF',
   },
+  error: darkColors.error,
+  success: darkColors.success,
 };
 
-export const darkColors = {
-  primary: {
-    50: '#012B52',
-    100: '#023F7A',
-    200: '#0353A3',
-    300: '#0568CC',
-    400: '#0B7FE6',
-    500: '#2E9FF2',
-    600: '#5CB8FF',
-    700: '#8FCFFF',
-    800: '#BAE0FF',
-    900: '#E6F2FF',
-  },
-  secondary: {
-    50: '#7A4801',
-    100: '#A36002',
-    200: '#CC7603',
-    300: '#E68A05',
-    400: '#FF9F0B',
-    500: '#FFB12E',
-    600: '#FFC25C',
-    700: '#FFD48F',
-    800: '#FFE4BA',
-    900: '#FFF5E6',
-  },
-  success: {
-    50: '#03422B',
-    100: '#045C3A',
-    200: '#06764A',
-    300: '#09965A',
-    400: '#12B76A',
-    500: '#3AC778',
-    600: '#6FDC9F',
-    700: '#A8EBCA',
-    800: '#D4F4E2',
-    900: '#EEFBF4',
-  },
-  error: {
-    50: '#6A1410',
-    100: '#8F1B14',
-    200: '#B42318',
-    300: '#D92D20',
-    400: '#F04438',
-    500: '#FF6B60',
-    600: '#FF938C',
-    700: '#FFBCB8',
-    800: '#FFE0DE',
-    900: '#FFF1F0',
-  },
-  neutral: {
-    0: '#0A0A0A',
-    50: '#171717',
-    100: '#262626',
-    200: '#404040',
-    300: '#525252',
-    400: '#737373',
-    500: '#A3A3A3',
-    600: '#D4D4D4',
-    700: '#E5E5E5',
-    800: '#F5F5F5',
-    900: '#FAFAFA',
-    950: '#FFFFFF',
-  },
-  background: {
-    primary: '#1A1A1A',
-    secondary: '#242424',
-    tertiary: '#2E2E2E',
-  },
-  text: {
-    primary: '#F5F5F5',
-    secondary: '#D4D4D4',
-    tertiary: '#A3A3A3',
-    inverse: '#171717',
-  },
-};
-
-export const colors = lightColors;
+// Uygulaman varsayılan olarak koyu tema odaklı
+export const colors = darkColors;
 
 export const spacing = {
   xs: 4,
@@ -162,15 +129,25 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
   xxl: 24,
+  card: 16,      // Kartlar için standart köşe
+  cardLarge: 24, // Hero / büyük kart yuvarlaklığı (home & bileşenler)
+  button: 12,    // Butonlar için biraz daha keskin
   full: 9999,
 };
 
 export const typography = {
+  fontFamily: {
+    // Montserrat fontlarına geçiş
+    regular: 'Montserrat-Regular',
+    medium: 'Montserrat-Medium',
+    semibold: 'Montserrat-SemiBold',
+    bold: 'Montserrat-Bold',
+  },
   sizes: {
     xs: 12,
     sm: 14,
@@ -178,41 +155,43 @@ export const typography = {
     lg: 18,
     xl: 20,
     xxl: 24,
-    xxxl: 32,
+    xxxl: 32, // Figma'daki H1 32px değeri
   },
+  lineHeights: {
+    tight: 1.25,  // Figma'da H1 için 1.25 belirtilmiş
+    normal: 1.5,
+    relaxed: 1.75,
+  },
+  // fontFamily kullanımına öncelik verin; bu değerler eski ekranlarda
+  // fontWeight: typography.weights.* ile geriye dönük uyum için.
   weights: {
     regular: '400' as const,
     medium: '500' as const,
     semibold: '600' as const,
     bold: '700' as const,
   },
-  lineHeights: {
-    tight: 1.2,
-    normal: 1.5,
-    relaxed: 1.75,
-  },
 };
 
 export const shadows = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
-  lg: {
+  md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
   },
 };

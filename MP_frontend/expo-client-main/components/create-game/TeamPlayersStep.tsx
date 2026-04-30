@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   hint: {
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
   },
   teamPlannerButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   teamPlannerButtonTextActive: {
@@ -574,17 +574,17 @@ const styles = StyleSheet.create({
   },
   skillLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
     flex: 1,
   },
   skillLabelSelected: {
     color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   equipmentQuestion: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   },
   equipmentLabel: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   equipmentLabelSelected: {
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
   },
   playerCountLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   counterControl: {
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   },
   counterValue: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.primary[500],
   },
   modalOverlay: {
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   modalScroll: {
@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
   },
   teamName: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   teamNameEdit: {
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.sm,
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.primary[500],
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
   },
   teamPlayerCount: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.primary[500],
     minWidth: 40,
     textAlign: 'center',
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
   },
   addTeamText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.primary[500],
   },
   teamSummary: {

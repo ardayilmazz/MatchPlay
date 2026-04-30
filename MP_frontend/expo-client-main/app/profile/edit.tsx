@@ -14,7 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ChevronLeft, Camera, User } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { universities, departments, sports, skillLevels } from '@/services/mockData';
 import Button from '@/components/Button';
@@ -22,6 +23,8 @@ import Input from '@/components/Input';
 import Picker from '@/components/Picker';
 
 export default function EditProfileScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { user, updateUser } = useAuth();
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
@@ -277,7 +280,8 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
@@ -295,7 +299,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   scrollContent: {
@@ -347,7 +351,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
     marginBottom: spacing.md,
   },
@@ -371,7 +375,7 @@ const styles = StyleSheet.create({
   sportChipText: {
     fontSize: typography.sizes.sm,
     color: colors.text.primary,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   sportChipTextSelected: {
     color: colors.text.inverse,
@@ -380,3 +384,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
 });
+}

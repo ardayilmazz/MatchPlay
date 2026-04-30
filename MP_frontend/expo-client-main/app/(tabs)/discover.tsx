@@ -1,71 +1,92 @@
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
-import { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { SlidersHorizontal, MapPin, AlertCircle } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { gameService } from '@/services/gameService';
 import { useAuth } from '@/contexts/AuthContext';
-import GameCard from '@/components/GameCard';
+import DiscoverGameRow from '@/components/DiscoverGameRow';
 import GameFiltersModal, { GameFilters } from '@/components/GameFilters';
 import Button from '@/components/Button';
 import { Game } from '@/types';
+import type { User as IndexedUser } from '@/types/index';
+import AppBackground from '@/components/AppBackground';
 
-// Varsayılan filtreleri oluştur
 const getDefaultFilters = (userGender?: 'male' | 'female' | 'other'): GameFilters => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 2); // Bugün + yarın (2 gün)
+  tomorrow.setDate(tomorrow.getDate() + 2);
   tomorrow.setHours(23, 59, 59, 999);
-  
-  // Kullanıcının cinsiyetine göre cinsiyet tercihleri
+
   let genderPreferences = ['herkes'];
   if (userGender === 'male') {
     genderPreferences = ['herkes', 'erkekler', 'karma_dengeli'];
   } else if (userGender === 'female') {
     genderPreferences = ['herkes', 'kizlar', 'karma_dengeli'];
   }
-  
+
   return {
     nameSearch: '',
-    gameTypeIds: [], // Tüm oyunlar
+    gameTypeIds: [],
     cityId: null,
     districtId: null,
-    maxDistance: 2, // 2 km
-    startDateFrom: today, // Bugün başla
-    startDateTo: tomorrow, // Yarın bitir
-    availableOnly: true, // Sadece yer olan oyunlar
+    maxDistance: 2,
+    startDateFrom: today,
+    startDateTo: tomorrow,
+    availableOnly: true,
     genderPreferences: genderPreferences,
-    skillLevels: [], // Tüm seviyeler
-    feeType: 'all', // Tüm ücretler
+    skillLevels: [],
+    feeType: 'all',
   };
 };
 
 export default function DiscoverScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const profileGender = (user as IndexedUser | null)?.gender;
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<GameFilters>(
-    getDefaultFilters(user?.gender as any)
+  const [activeFilters, setActiveFilters] = useState<GameFilters>(() =>
+    getDefaultFilters(profileGender)
   );
+  const [searchDraft, setSearchDraft] = useState(activeFilters.nameSearch);
 
-  // --- KONUM ÖZELLİĞİ GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
-  const location = null;
-  const locationError = null;
-  const hasPermission = true; // Banner'ı gizlemek için true varsayalım
-  // const { location, error: locationError, hasPermission, requestPermission, isLoading: locationLoading } = useLocation();
-  // ---------------------------------------------------------
+  useEffect(() => {
+    setSearchDraft(activeFilters.nameSearch);
+  }, [activeFilters.nameSearch]);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const next = (searchDraft ?? '').trim();
+      setActiveFilters((prev) => (prev.nameSearch === next ? prev : { ...prev, nameSearch: next }));
+    }, 400);
+    return () => clearTimeout(id);
+  }, [searchDraft]);
 
   const loadGames = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const fetchedGames = await gameService.getGames({
         nameSearch: activeFilters.nameSearch,
         gameTypeIds: activeFilters.gameTypeIds,
@@ -78,7 +99,7 @@ export default function DiscoverScreen() {
         skillLevels: activeFilters.skillLevels,
         feeType: activeFilters.feeType,
       });
-      
+
       setGames(fetchedGames);
     } catch (err) {
       console.error('[DiscoverScreen] Oyunlar yüklenirken hata:', err);
@@ -92,11 +113,10 @@ export default function DiscoverScreen() {
   useEffect(() => {
     loadGames();
   }, [activeFilters]);
-  
-  // Kullanıcı değiştiğinde varsayılan filtreleri güncelle
+
   useEffect(() => {
-    setActiveFilters(getDefaultFilters(user?.gender as any));
-  }, [user?.gender]);
+    setActiveFilters(getDefaultFilters(profileGender));
+  }, [profileGender]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -108,92 +128,52 @@ export default function DiscoverScreen() {
     setIsLoading(true);
   };
 
-  // handleRequestLocation fonksiyonunu devre dışı bırakabilir veya silebiliriz.
-  // const handleRequestLocation = async () => { ... };
-
-
   const getActiveFilterCount = () => {
-    const defaults = getDefaultFilters(user?.gender as any);
+    const defaults = getDefaultFilters(profileGender);
     let count = 0;
-    
+
     if (activeFilters.nameSearch && activeFilters.nameSearch.trim()) count++;
     if (activeFilters.gameTypeIds.length > 0) count++;
     if (activeFilters.cityId) count++;
     if (activeFilters.districtId) count++;
     if (activeFilters.skillLevels.length > 0) count++;
     if (activeFilters.feeType !== 'all') count++;
-    
-    // Varsayılandan farklıysa say
+
     if (activeFilters.maxDistance !== defaults.maxDistance) count++;
     if (activeFilters.availableOnly !== defaults.availableOnly) count++;
-    
-    // Tarih filtresi varsayılandan farklıysa
-    const hasCustomDate = 
+
+    const hasCustomDate =
       activeFilters.startDateFrom?.getTime() !== defaults.startDateFrom?.getTime() ||
       activeFilters.startDateTo?.getTime() !== defaults.startDateTo?.getTime();
     if (hasCustomDate) count++;
-    
-    // Cinsiyet tercihi varsayılandan farklıysa
-    const hasCustomGender = JSON.stringify(activeFilters.genderPreferences) !== JSON.stringify(defaults.genderPreferences);
+
+    const hasCustomGender =
+      JSON.stringify(activeFilters.genderPreferences) !== JSON.stringify(defaults.genderPreferences);
     if (hasCustomGender) count++;
-    
+
     return count;
   };
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <Text style={styles.title}>Keşfet</Text>
-        <Pressable
-          style={styles.filterButton}
-          onPress={() => setFiltersVisible(true)}
-        >
-          <SlidersHorizontal size={20} color={colors.primary[500]} />
-          {getActiveFilterCount() > 0 && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+  const handleGamePress = useCallback(
+    (game: Game) => {
+      router.push(`/game/${game.id}` as `/game/${string}`);
+    },
+    [router]
+  );
 
-      {/* --- KONUM BANNER'LARI GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
-      {!hasPermission && !locationLoading && (
-        <View style={styles.locationPrompt}>
-          <MapPin size={16} color={colors.text.secondary} />
-          <Text style={styles.locationPromptText}>
-            Konumunuza göre oyunlar görmek için konum izni verin
-          </Text>
-          <Pressable onPress={handleRequestLocation}>
-            <Text style={styles.locationPromptButton}>Konum Ver</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {locationError && hasPermission && (
-        <View style={styles.errorBanner}>
-          <AlertCircle size={16} color={colors.error[500]} />
-          <Text style={styles.errorBannerText}>{locationError}</Text>
-        </View>
-      )}
-      --------------------------------------------------------- */}
-
-      <Text style={styles.resultCount}>
-        {games.length} oyun bulundu
-      </Text>
-    </View>
+  const renderItem = useCallback(
+    ({ item }: { item: Game }) => <DiscoverGameRow game={item} onPress={handleGamePress} />,
+    [handleGamePress]
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>Henüz oyun yok</Text>
-      <Text style={styles.emptyText}>
-        Seçtiğiniz filtrelere uygun oyun bulunamadı.
-      </Text>
+      <Text style={styles.emptyText}>Seçtiğiniz filtrelere uygun oyun bulunamadı.</Text>
       <Button
         title="Filtreleri Sıfırla"
         onPress={() => {
-          setActiveFilters(getDefaultFilters(user?.gender as any));
+          setActiveFilters(getDefaultFilters(profileGender));
         }}
         variant="outline"
         style={styles.emptyButton}
@@ -203,169 +183,220 @@ export default function DiscoverScreen() {
 
   if (isLoading && !refreshing) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text style={styles.loadingText}>Oyunlar yüklenyor...</Text>
-      </View>
+      <AppBackground>
+        <SafeAreaView style={styles.safe} edges={['top']}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.secondary[400]} />
+            <Text style={styles.loadingText}>Oyunlar yükleniyor...</Text>
+          </View>
+        </SafeAreaView>
+      </AppBackground>
     );
   }
 
-  const handleGamePress = (game: Game) => {
-    router.push(`/game/${game.id}` as any);
-  };
-
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={games}
-        renderItem={({ item }) => <GameCard game={item} onPress={handleGamePress} />}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={games.length === 0 ? styles.emptyListContent : styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary[500]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      />
+    <AppBackground>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.page}>
+          <Text style={styles.screenTitle}>Keşfet</Text>
 
-      <GameFiltersModal
-        visible={filtersVisible}
-        onClose={() => setFiltersVisible(false)}
-        filters={activeFilters}
-        onApply={handleApplyFilters}
-        userGender={user?.gender as any}
-      />
-    </View>
+          <View style={styles.searchRow}>
+            <LinearGradient
+              colors={['#1e2538', '#132456']}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.searchShell}
+            >
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Lobi ismi giriniz..."
+                placeholderTextColor={colors.text.tertiary}
+                value={searchDraft}
+                onChangeText={setSearchDraft}
+                returnKeyType="search"
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              <Search size={22} color={colors.neutral[0]} strokeWidth={2} />
+            </LinearGradient>
+
+            <Pressable
+              style={styles.filterSquare}
+              onPress={() => setFiltersVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Filtreler"
+            >
+              <SlidersHorizontal size={22} color={colors.neutral[0]} strokeWidth={2} />
+              {getActiveFilterCount() > 0 && (
+                <View style={styles.filterBadge}>
+                  <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          {error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : null}
+
+          <View style={styles.listSurface}>
+            <FlatList
+              data={games}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              ListEmptyComponent={renderEmpty}
+              contentContainerStyle={
+                games.length === 0 ? styles.emptyListContent : styles.listContent
+              }
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.secondary[400]}
+                />
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+
+        <GameFiltersModal
+          visible={filtersVisible}
+          onClose={() => setFiltersVisible(false)}
+          filters={activeFilters}
+          onApply={handleApplyFilters}
+          userGender={profileGender}
+        />
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.secondary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background.secondary,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-  },
-  header: {
-    backgroundColor: colors.neutral[0],
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-  },
-  filterButton: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary[50],
-    position: 'relative',
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: colors.error[500],
-    borderRadius: borderRadius.full,
-    minWidth: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  filterBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.weights.bold,
-    color: colors.neutral[0],
-  },
-  locationPrompt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: colors.primary[50],
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-  },
-  locationPromptText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.text.secondary,
-  },
-  locationPromptButton: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary[500],
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: colors.error[50],
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-  },
-  errorBannerText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.error[700],
-  },
-  resultCount: {
-    fontSize: typography.sizes.sm,
-    color: colors.text.tertiary,
-    marginBottom: spacing.sm,
-  },
-  listContent: {
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  emptyListContent: {
-    flexGrow: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  emptyButton: {
-    minWidth: 200,
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    page: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+    },
+    screenTitle: {
+      fontSize: typography.sizes.xxxl,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+      paddingTop: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    searchShell: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      minHeight: 48,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+    },
+    searchInput: {
+      flex: 1,
+      minHeight: 48,
+      paddingVertical: spacing.sm,
+      paddingRight: spacing.sm,
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.primary,
+    },
+    filterSquare: {
+      marginLeft: spacing.sm,
+      width: 48,
+      height: 48,
+      borderRadius: borderRadius.md,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.12)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    },
+    filterBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      backgroundColor: colors.error[500],
+      borderRadius: borderRadius.full,
+      minWidth: 18,
+      height: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 4,
+    },
+    filterBadgeText: {
+      fontSize: 10,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.neutral[0],
+    },
+    errorText: {
+      fontSize: typography.sizes.sm,
+      color: colors.error[400],
+      marginBottom: spacing.sm,
+    },
+    listSurface: {
+      flex: 1,
+      backgroundColor: colors.background.secondary,
+      borderTopLeftRadius: borderRadius.xxl,
+      borderTopRightRadius: borderRadius.xxl,
+      overflow: 'hidden',
+      marginHorizontal: -spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md,
+    },
+    listContent: {
+      paddingBottom: spacing.xxl,
+    },
+    emptyListContent: {
+      flexGrow: 1,
+      paddingBottom: spacing.xxl,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.xl,
+      minHeight: 280,
+    },
+    emptyTitle: {
+      fontSize: typography.sizes.xl,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+      marginBottom: spacing.sm,
+    },
+    emptyText: {
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+    emptyButton: {
+      minWidth: 200,
+    },
+  });
+}

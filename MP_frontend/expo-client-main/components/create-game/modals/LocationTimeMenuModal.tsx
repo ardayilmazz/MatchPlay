@@ -1,5 +1,6 @@
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { X, MapPin, DollarSign, Calendar, Clock, Check } from 'lucide-react-native';
 
 // Süre formatlama fonksiyonu
@@ -55,7 +56,9 @@ export default function LocationTimeMenuModal({
   onDateTimePress,
   onDurationPress,
 }: LocationTimeMenuModalProps) {
-  
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   const formatDateTime = (date: Date) => {
     return date.toLocaleString('tr-TR', {
       day: 'numeric',
@@ -182,7 +185,8 @@ export default function LocationTimeMenuModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -203,7 +207,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   menuItems: {
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
   },
   menuTitle: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   menuHint: {
@@ -246,6 +250,7 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: typography.sizes.sm,
     color: colors.success[500],
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
-});
+  });
+}

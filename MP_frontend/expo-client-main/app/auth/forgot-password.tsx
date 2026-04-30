@@ -3,12 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ChevronLeft, KeyRound } from 'lucide-react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { authService } from '@/services/authService';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import AppBackground from '@/components/AppBackground';
 
 export default function ForgotPasswordScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,6 +45,7 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -49,7 +54,7 @@ export default function ForgotPasswordScreen() {
 
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <KeyRound size={48} color={colors.primary[500]} />
+            <KeyRound size={48} color={colors.secondary[400]} />
           </View>
         </View>
 
@@ -89,13 +94,15 @@ export default function ForgotPasswordScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
@@ -112,7 +119,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.primary[900],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -122,7 +129,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
     textAlign: 'center',
@@ -142,7 +149,8 @@ const styles = StyleSheet.create({
   },
   backToLoginText: {
     fontSize: typography.sizes.md,
-    color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.semibold,
   },
 });
+}

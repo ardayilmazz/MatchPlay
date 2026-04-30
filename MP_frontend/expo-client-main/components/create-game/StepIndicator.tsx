@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 
 interface StepIndicatorProps {
   steps: string[];
@@ -7,6 +8,8 @@ interface StepIndicatorProps {
 }
 
 export default function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.container}>
       <View style={styles.stepsContainer}>
@@ -44,7 +47,8 @@ export default function StepIndicator({ steps, currentStep }: StepIndicatorProps
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
@@ -77,7 +81,7 @@ const styles = StyleSheet.create({
   },
   stepNumber: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.secondary,
   },
   stepNumberActive: {
@@ -94,8 +98,9 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     textAlign: 'center',
   },
-});
+  });
+}

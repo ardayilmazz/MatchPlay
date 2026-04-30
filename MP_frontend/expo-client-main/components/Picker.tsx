@@ -9,7 +9,8 @@ import {
   TextInput,
 } from 'react-native';
 import { ChevronDown, Search, X } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
 
 interface PickerOption {
   label: string;
@@ -35,6 +36,8 @@ export default function Picker({
   error,
   searchable = false,
 }: PickerProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [isVisible, setIsVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -123,20 +126,21 @@ export default function Picker({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     marginBottom: spacing.md,
   },
   label: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.primary[900],
     borderWidth: 1,
-    borderColor: colors.neutral[300],
+    borderColor: 'rgba(255,255,255,0.14)',
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.background.primary,
+    backgroundColor: colors.background.secondary,
     borderTopLeftRadius: borderRadius.xxl,
     borderTopRightRadius: borderRadius.xxl,
     maxHeight: '70%',
@@ -177,20 +181,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.primary[900],
     margin: spacing.lg,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   searchInput: {
     flex: 1,
@@ -203,17 +209,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   selectedOption: {
-    backgroundColor: colors.primary[50],
+    backgroundColor: 'rgba(255, 121, 88, 0.15)',
   },
   optionText: {
     fontSize: typography.sizes.md,
     color: colors.text.primary,
   },
   selectedOptionText: {
-    color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.semibold,
   },
-});
+  });
+}

@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   requestCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     ...shadows.md,

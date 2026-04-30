@@ -10,13 +10,16 @@ import {
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Clock, CheckCircle2, XCircle, Calendar, MapPin } from 'lucide-react-native';
-import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
+import { spacing, borderRadius, typography, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { GameRequest } from '@/types/index';
 import { gameRequestService } from '@/services/gameRequestService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
 
 export default function MyRequestsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const { user } = useAuth();
   const [requests, setRequests] = useState<GameRequest[]>([]);
@@ -207,16 +210,17 @@ export default function MyRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   header: {
     flexDirection: 'row',
@@ -225,7 +229,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -234,7 +238,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   headerRight: {
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   requestCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     ...shadows.md,
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
   },
   sportName: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -285,7 +289,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   cancelButton: {
@@ -299,7 +303,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginTop: spacing.md,
     marginBottom: spacing.sm,
@@ -314,3 +318,4 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
 });
+}

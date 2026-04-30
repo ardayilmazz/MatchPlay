@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   input: {
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   saveButton: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.neutral[0],
   },
 });

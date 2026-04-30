@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { X } from 'lucide-react-native';
 import Button from '@/components/Button';
 
@@ -32,6 +33,8 @@ export default function TitleDescriptionModal({
   onClose,
   onSave,
 }: TitleDescriptionModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [title, setTitle] = useState(initialTitle || '');
   const [description, setDescription] = useState(initialDescription || '');
   const [tags, setTags] = useState<string[]>(initialTags || []);
@@ -133,7 +136,8 @@ export default function TitleDescriptionModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   scrollView: {
@@ -168,7 +172,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -214,9 +218,10 @@ const styles = StyleSheet.create({
   },
   tagTextSelected: {
     color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   saveButton: {
     marginTop: spacing.md,
   },
-});
+  });
+}

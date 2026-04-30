@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { X, MapPin, DollarSign, Calendar, Clock, ChevronLeft, ChevronRight, ArrowLeft, Edit3 } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { API_URL } from '@/config/api';
@@ -66,6 +67,8 @@ export default function LocationTimeModal({
   onSave,
   onBackToMenu,
 }: LocationTimeModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   // Location state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationData[]>([]);
@@ -558,7 +561,8 @@ export default function LocationTimeModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -595,7 +599,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     flex: 1,
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   locationContent: {
@@ -632,7 +636,7 @@ const styles = StyleSheet.create({
   },
   resultName: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   resultAddress: {
@@ -650,7 +654,7 @@ const styles = StyleSheet.create({
   },
   feeLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   feeInput: {
@@ -677,7 +681,7 @@ const styles = StyleSheet.create({
   },
   monthTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   calendar: {
@@ -693,7 +697,7 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'center',
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.secondary,
   },
   daysGrid: {
@@ -726,7 +730,7 @@ const styles = StyleSheet.create({
   },
   dayTextSelected: {
     color: colors.background.primary,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
   },
   hourSelector: {
     gap: spacing.sm,
@@ -734,7 +738,7 @@ const styles = StyleSheet.create({
   },
   hourLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   hourScroll: {
@@ -759,7 +763,7 @@ const styles = StyleSheet.create({
   },
   hourTextSelected: {
     color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   durationContent: {
     gap: spacing.lg,
@@ -790,7 +794,7 @@ const styles = StyleSheet.create({
   },
   durationValue: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.primary[500],
   },
   customDurationButton: {
@@ -807,7 +811,7 @@ const styles = StyleSheet.create({
   },
   customDurationText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.primary[500],
   },
   customDurationContainer: {
@@ -815,7 +819,7 @@ const styles = StyleSheet.create({
   },
   customDurationLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   customDurationHint: {
@@ -854,7 +858,7 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   timeRow: {
@@ -865,7 +869,7 @@ const styles = StyleSheet.create({
   },
   timeDisplay: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     flex: 1,
   },
@@ -877,7 +881,8 @@ const styles = StyleSheet.create({
   },
   timeButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.background.primary,
+    fontFamily: typography.fontFamily.semibold,
+    color: colors.text.inverse,
   },
-});
+  });
+}

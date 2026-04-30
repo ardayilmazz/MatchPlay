@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   infoCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     ...shadows.sm,

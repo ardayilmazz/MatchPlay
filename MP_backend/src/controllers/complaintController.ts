@@ -125,29 +125,34 @@ export const getMyComplaints = async (req: Request, res: Response) => {
       .populate('gameSessionId', 'title')
       .sort({ createdAt: -1 });
 
-    const formattedComplaints = complaints.map((complaint: any) => ({
-      id: complaint._id.toString(),
-      reportedUser: {
-        id: complaint.reportedId._id.toString(),
-        firstName: complaint.reportedId.firstName,
-        lastName: complaint.reportedId.lastName,
-        profilePhoto: complaint.reportedId.profilePhoto,
-      },
-      game: {
-        id: complaint.gameSessionId._id.toString(),
-        title: complaint.gameSessionId.title,
-      },
-      message: complaint.message,
-      status: complaint.status,
-      createdAt: complaint.createdAt,
-    }));
+    const formattedComplaints = complaints
+      .filter((complaint: any) => complaint.reportedId && complaint.gameSessionId)
+      .map((complaint: any) => ({
+        id: complaint._id.toString(),
+        reportedUser: {
+          id: complaint.reportedId._id.toString(),
+          firstName: complaint.reportedId.firstName || '',
+          lastName: complaint.reportedId.lastName || '',
+          profilePhoto: complaint.reportedId.profilePhoto,
+        },
+        game: {
+          id: complaint.gameSessionId._id.toString(),
+          title: complaint.gameSessionId.title || 'Oyun',
+        },
+        message: complaint.message,
+        status: complaint.status,
+        createdAt: complaint.createdAt,
+      }));
 
     res.status(200).json({
       success: true,
       data: formattedComplaints,
     });
   } catch (error: any) {
-    console.error('[getMyComplaints] Hata:', error.message);
-    res.status(500).json({ success: false, message: 'Şikayetler getirilirken bir hata oluştu' });
+    console.error('[getMyComplaints] Hata:', error?.message || error);
+    res.status(500).json({
+      success: false,
+      message: 'Şikayetler getirilirken bir hata oluştu',
+    });
   }
 };

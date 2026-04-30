@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   modal: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     width: '100%',
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     textAlign: 'center',
     marginTop: spacing.lg,

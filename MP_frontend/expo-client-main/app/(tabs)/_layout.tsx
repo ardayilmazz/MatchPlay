@@ -1,17 +1,18 @@
 import { Tabs } from 'expo-router';
 import { Home, Search, PlusCircle, Bell, User } from 'lucide-react-native';
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary[500],
-        tabBarInactiveTintColor: colors.neutral[400],
+        tabBarActiveTintColor: colors.secondary[400],
+        tabBarInactiveTintColor: colors.text.tertiary,
         tabBarStyle: {
-          backgroundColor: colors.background.primary,
-          borderTopColor: colors.neutral[200],
+          backgroundColor: colors.background.secondary,
+          borderTopColor: 'rgba(255,255,255,0.08)',
           borderTopWidth: 1,
           height: 70,
           paddingBottom: 10,
@@ -19,7 +20,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '500',
+          fontFamily: 'Montserrat-Medium',
           marginTop: 4,
           marginBottom: 2,
         },

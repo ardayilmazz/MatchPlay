@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
-import { Zap } from 'lucide-react-native';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { useMemo } from 'react';
+import { Zap, ChevronRight } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, borderRadius, typography } from '@/constants/theme';
 import { Game } from '@/types';
 import GameCard from '@/components/GameCard';
 import Button from '@/components/Button';
@@ -12,6 +14,9 @@ interface InstantGamesSectionProps {
 }
 
 export default function InstantGamesSection({ games, isLoading }: InstantGamesSectionProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const handleGamePress = (game: Game) => {
     router.push(`/game/${game.id}` as any);
   };
@@ -25,7 +30,7 @@ export default function InstantGamesSection({ games, isLoading }: InstantGamesSe
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Zap size={20} color={colors.secondary[500]} />
+            <Zap size={20} color={colors.secondary[400]} />
             <Text style={styles.title}>Anlık Oyunlar</Text>
           </View>
         </View>
@@ -39,7 +44,7 @@ export default function InstantGamesSection({ games, isLoading }: InstantGamesSe
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Zap size={20} color={colors.secondary[500]} />
+            <Zap size={20} color={colors.secondary[400]} />
             <Text style={styles.title}>Anlık Oyunlar</Text>
           </View>
         </View>
@@ -62,15 +67,19 @@ export default function InstantGamesSection({ games, isLoading }: InstantGamesSe
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Zap size={20} color={colors.secondary[500]} />
+          <Zap size={20} color={colors.secondary[400]} />
           <Text style={styles.title}>Anlık Oyunlar</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{games.length}</Text>
           </View>
         </View>
         {games.length > 3 && (
-          <Pressable onPress={handleViewAll}>
+          <Pressable
+            onPress={handleViewAll}
+            style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}
+          >
             <Text style={styles.viewAllText}>Tümünü Gör</Text>
+            <ChevronRight size={16} color={colors.secondary[400]} />
           </Pressable>
         )}
       </View>
@@ -93,15 +102,16 @@ export default function InstantGamesSection({ games, isLoading }: InstantGamesSe
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
   titleContainer: {
@@ -111,11 +121,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   badge: {
-    backgroundColor: colors.secondary[500],
+    backgroundColor: colors.secondary[400],
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.full,
@@ -124,36 +134,41 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
-    color: colors.neutral[0],
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text.primary,
   },
   viewAllText: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary[500],
+    fontFamily: typography.fontFamily.semibold,
+    color: colors.secondary[400],
   },
   subtitle: {
     fontSize: typography.sizes.sm,
-    color: colors.text.secondary,
-    paddingHorizontal: spacing.md,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text.tertiary,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
+    lineHeight: typography.sizes.sm * typography.lineHeights.normal,
   },
   listContent: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   cardWrapper: {
     width: 320,
     marginRight: spacing.md,
   },
   emptyContainer: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginHorizontal: spacing.md,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.cardLarge,
+    padding: spacing.xl,
+    marginHorizontal: spacing.lg,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   emptyText: {
     fontSize: typography.sizes.md,
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.md,
@@ -163,8 +178,10 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.sizes.md,
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
     textAlign: 'center',
     paddingVertical: spacing.xl,
   },
-});
+  });
+}

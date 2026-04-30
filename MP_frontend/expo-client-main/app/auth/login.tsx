@@ -12,12 +12,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import AppBackground from '@/components/AppBackground';
 
 export default function LoginScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -56,6 +60,7 @@ export default function LoginScreen() {
   };
 
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -117,13 +122,15 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   keyboardView: {
     flex: 1,
@@ -140,7 +147,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -153,8 +160,8 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     fontSize: typography.sizes.sm,
-    color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.semibold,
     textAlign: 'right',
     marginBottom: spacing.xl,
   },
@@ -172,7 +179,8 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: typography.sizes.md,
-    color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.semibold,
   },
-});
+  });
+}

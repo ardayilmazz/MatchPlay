@@ -19,11 +19,14 @@ import {
   ChevronLeft,
   CheckCircle,
 } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { gameService } from '@/services/gameService';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function CompletedGamesScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -134,6 +137,16 @@ export default function CompletedGamesScreen() {
           options={{
             headerShown: true,
             title: 'Geçmiş Oyunlar',
+            headerStyle: {
+              backgroundColor: colors.background.primary,
+            },
+            headerTintColor: colors.text.primary,
+            headerTitleStyle: {
+              fontFamily: typography.fontFamily.semibold,
+              fontSize: typography.sizes.lg,
+              color: colors.text.primary,
+            },
+            headerShadowVisible: false,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: spacing.sm }}>
                 <ChevronLeft size={24} color={colors.text.primary} />
@@ -154,6 +167,16 @@ export default function CompletedGamesScreen() {
         options={{
           headerShown: true,
           title: 'Geçmiş Oyunlar',
+          headerStyle: {
+            backgroundColor: colors.background.primary,
+          },
+          headerTintColor: colors.text.primary,
+          headerTitleStyle: {
+            fontFamily: typography.fontFamily.semibold,
+            fontSize: typography.sizes.lg,
+            color: colors.text.primary,
+          },
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: spacing.sm }}>
               <ChevronLeft size={24} color={colors.text.primary} />
@@ -183,7 +206,8 @@ export default function CompletedGamesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
@@ -201,7 +225,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   gameCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -218,7 +242,7 @@ const styles = StyleSheet.create({
   },
   gameTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -248,7 +272,7 @@ const styles = StyleSheet.create({
   },
   completedBadgeText: {
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.success[700],
   },
   emptyState: {
@@ -260,7 +284,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.secondary,
     marginTop: spacing.lg,
     textAlign: 'center',
@@ -272,3 +296,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+}

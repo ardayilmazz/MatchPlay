@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     height: SCREEN_HEIGHT * 0.9,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     textAlign: 'center',
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
     textAlign: 'center',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.secondary[700],
   },
 });

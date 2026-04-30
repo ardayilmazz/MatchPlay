@@ -14,15 +14,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, User } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { universities, departments } from '@/services/mockData';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Picker from '@/components/Picker';
+import AppBackground from '@/components/AppBackground';
 
 export default function BasicInfoScreen() {
   const { user, updateUser } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || '');
@@ -119,6 +123,7 @@ export default function BasicInfoScreen() {
   };
 
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -145,7 +150,7 @@ export default function BasicInfoScreen() {
                   </View>
                 )}
                 <View style={styles.cameraIcon}>
-                  <Camera size={20} color={colors.text.inverse} />
+                  <Camera size={20} color={colors.neutral[0]} />
                 </View>
               </TouchableOpacity>
               {errors.profilePhoto && (
@@ -213,13 +218,15 @@ export default function BasicInfoScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   keyboardView: {
     flex: 1,
@@ -233,7 +240,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -244,13 +251,13 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 4,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
   },
   form: {
     flex: 1,
@@ -271,7 +278,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.neutral[200],
+    backgroundColor: colors.primary[900],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -282,11 +289,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: colors.background.primary,
+    borderColor: colors.background.secondary,
   },
   photoError: {
     fontSize: typography.sizes.sm,
@@ -296,4 +303,5 @@ const styles = StyleSheet.create({
   continueButton: {
     marginTop: spacing.lg,
   },
-});
+  });
+}

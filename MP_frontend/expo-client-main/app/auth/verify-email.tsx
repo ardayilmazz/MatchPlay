@@ -3,12 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Mail } from 'lucide-react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { authService } from '@/services/authService';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import AppBackground from '@/components/AppBackground';
 
 export default function VerifyEmailScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const params = useLocalSearchParams();
   const email = params.email as string;
   const [code, setCode] = useState('');
@@ -42,6 +46,7 @@ export default function VerifyEmailScreen() {
   };
 
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -50,7 +55,7 @@ export default function VerifyEmailScreen() {
 
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <Mail size={48} color={colors.primary[500]} />
+            <Mail size={48} color={colors.secondary[400]} />
           </View>
         </View>
 
@@ -89,13 +94,15 @@ export default function VerifyEmailScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
@@ -112,7 +119,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.primary[900],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -122,7 +129,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
     textAlign: 'center',
@@ -142,14 +149,16 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: typography.sizes.md,
-    color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.semibold,
   },
   infoBox: {
     marginTop: spacing.xl,
     padding: spacing.md,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.secondary,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   infoText: {
     fontSize: typography.sizes.sm,
@@ -157,7 +166,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   infoCode: {
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
 });
+}

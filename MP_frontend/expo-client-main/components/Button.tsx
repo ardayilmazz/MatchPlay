@@ -1,6 +1,7 @@
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, View } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
-import { ReactNode } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { colors as themeColors, spacing, typography, borderRadius } from '@/constants/theme';
+import { ReactNode, useMemo } from 'react';
 
 interface ButtonProps {
   title: string;
@@ -25,6 +26,9 @@ export default function Button({
   leftIcon,
   size = 'medium',
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const buttonStyles = [
     styles.button,
     size === 'small' && styles.smallButton,
@@ -49,6 +53,9 @@ export default function Button({
     textStyle,
   ];
 
+  const activityColor =
+    variant === 'outline' ? colors.secondary[400] : colors.neutral[0];
+
   return (
     <TouchableOpacity
       style={buttonStyles}
@@ -56,9 +63,7 @@ export default function Button({
       disabled={disabled || loading}
       activeOpacity={0.7}>
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? colors.neutral[0] : colors.primary[500]}
-        />
+        <ActivityIndicator color={activityColor} />
       ) : (
         <View style={styles.content}>
           {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
@@ -69,11 +74,11 @@ export default function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   button: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
@@ -88,20 +93,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     minHeight: 56,
   },
-  primaryButton: {
-    backgroundColor: colors.primary[500],
-  },
-  secondaryButton: {
-    backgroundColor: colors.secondary[500],
-  },
-  outlineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.primary[500],
-  },
-  dangerButton: {
-    backgroundColor: colors.error[500],
-  },
   disabledButton: {
     opacity: 0.5,
   },
@@ -115,7 +106,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   smallText: {
     fontSize: typography.sizes.sm,
@@ -123,19 +114,41 @@ const styles = StyleSheet.create({
   largeText: {
     fontSize: typography.sizes.lg,
   },
-  primaryText: {
-    color: colors.text.inverse,
-  },
-  secondaryText: {
-    color: colors.text.inverse,
-  },
-  outlineText: {
-    color: colors.primary[500],
-  },
-  dangerText: {
-    color: colors.text.inverse,
-  },
   disabledText: {
     opacity: 0.7,
   },
 });
+
+type Colors = typeof themeColors;
+
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    ...baseStyles as object,
+    primaryButton: {
+      backgroundColor: colors.secondary[400],
+    },
+    secondaryButton: {
+      backgroundColor: colors.primary[600],
+    },
+    outlineButton: {
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderColor: colors.secondary[400],
+    },
+    dangerButton: {
+      backgroundColor: colors.error[500],
+    },
+    primaryText: {
+      color: colors.neutral[0],
+    },
+    secondaryText: {
+      color: colors.neutral[0],
+    },
+    outlineText: {
+      color: colors.neutral[0],
+    },
+    dangerText: {
+      color: colors.neutral[0],
+    },
+  });
+}

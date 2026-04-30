@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { ChevronRight, Check } from 'lucide-react-native';
 import Button from '@/components/Button';
 import TeamPlayersModal from './modals/TeamPlayersModal';
@@ -45,6 +46,8 @@ export default function Step2TeamStep({
   onGenderUpdate,
   onNext,
 }: Step2TeamStepProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
@@ -142,13 +145,14 @@ export default function Step2TeamStep({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   selectedInfo: {
@@ -190,9 +194,10 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: typography.sizes.sm,
     color: colors.success[500],
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   button: {
     marginTop: spacing.lg,
   },
-});
+  });
+}

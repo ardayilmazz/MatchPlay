@@ -10,31 +10,39 @@ import {
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { complaintService, Complaint } from '@/services/complaintService';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function MyComplaintsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const { user } = useAuth();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.token) {
       loadComplaints();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
   const loadComplaints = async () => {
     if (!user?.token) return;
+    setError(null);
 
     try {
       const data = await complaintService.getMyComplaints(user.token);
-      setComplaints(data);
-    } catch (error) {
-      console.error('Error loading complaints:', error);
+      setComplaints(data ?? []);
+    } catch (err: any) {
+      setError(err?.message || 'Şikayetler yüklenirken bir sorun oluştu');
+      setComplaints([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -65,10 +73,19 @@ export default function MyComplaintsScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>Henüz Şikayet Yok</Text>
-      <Text style={styles.emptyText}>
-        Henüz hiçbir kullanıcıya şikayet etmediniz
+      <Text style={styles.emptyTitle}>
+        {error ? 'Bir Sorun Oluştu' : 'Henüz Şikayet Yok'}
       </Text>
+      <Text style={styles.emptyText}>
+        {error
+          ? error + ' Lütfen tekrar deneyin.'
+          : 'Henüz hiçbir kullanıcıya şikayet etmediniz'}
+      </Text>
+      {error && (
+        <Pressable style={styles.retryButton} onPress={loadComplaints}>
+          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+        </Pressable>
+      )}
     </View>
   );
 
@@ -112,16 +129,17 @@ export default function MyComplaintsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   header: {
     flexDirection: 'row',
@@ -130,7 +148,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -140,7 +158,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   headerRight: {
@@ -154,14 +172,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   complaintCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     ...shadows.md,
   },
   reportedName: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -189,7 +207,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -197,5 +215,19 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     color: colors.text.secondary,
     textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  retryButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.primary[500],
+    borderRadius: borderRadius.md,
+    marginTop: spacing.sm,
+  },
+  retryButtonText: {
+    fontSize: typography.sizes.md,
+    fontFamily: typography.fontFamily.semibold,
+    color: colors.text.inverse,
   },
 });
+}

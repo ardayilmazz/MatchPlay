@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useMemo } from 'react';
 import { LucideIcon } from 'lucide-react-native';
-import { colors, spacing, borderRadius, typography, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, borderRadius, typography, shadows } from '@/constants/theme';
 
 interface StatisticsCardProps {
   title: string;
@@ -10,14 +12,19 @@ interface StatisticsCardProps {
   onPress?: () => void;
 }
 
-export default function StatisticsCard({ title, value, icon: Icon, color = colors.primary[500], onPress }: StatisticsCardProps) {
+export default function StatisticsCard({ title, value, icon: Icon, color: iconColor, onPress }: StatisticsCardProps) {
+  const { colors } = useTheme();
+  const color = iconColor ?? colors.secondary[400];
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const content = (
     <>
       <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
-        <Icon size={24} color={color} />
+        <Icon size={18} color={color} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
+          {value}
+        </Text>
         <Text style={styles.title}>{title}</Text>
       </View>
     </>
@@ -40,38 +47,45 @@ export default function StatisticsCard({ title, value, icon: Icon, color = color
   return <View style={styles.card}>{content}</View>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.lg,
+    minWidth: 0,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     ...shadows.sm,
   },
   cardPressed: {
     opacity: 0.7,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
     borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   textContainer: {
     flex: 1,
+    minWidth: 0,
   },
   value: {
-    fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.lg,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   title: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
   },
-});
+  });
+}

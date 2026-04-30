@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   modal: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     width: '100%',
     maxWidth: 500,
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   closeButton: {
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: spacing.lg,
@@ -239,19 +239,19 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   label: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
   commentInput: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
     borderRadius: borderRadius.md,
     padding: spacing.md,
     fontSize: typography.sizes.md,

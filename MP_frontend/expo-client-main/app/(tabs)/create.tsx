@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import StepIndicator from '@/components/create-game/StepIndicator';
 import Step1GameStep from '@/components/create-game/Step1GameStep';
@@ -28,6 +29,8 @@ const STEPS = [
 
 export default function CreateScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [currentStep, setCurrentStep] = useState(0);
   const [gameTypes, setGameTypes] = useState<GameType[]>([]);
   const [loadingGameTypes, setLoadingGameTypes] = useState(true);
@@ -323,7 +326,8 @@ export default function CreateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
@@ -342,7 +346,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   content: {
@@ -351,4 +355,5 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: spacing.lg,
   },
-});
+  });
+}

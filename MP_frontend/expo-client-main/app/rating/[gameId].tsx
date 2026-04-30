@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { ArrowLeft, Check, Star } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { ratingService, ParticipantWithRating } from '@/services/ratingService';
 import { gameService } from '@/services/gameService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +23,8 @@ import type { Game } from '@/types';
 export default function RatingScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const [game, setGame] = useState<Game | null>(null);
   const [participants, setParticipants] = useState<ParticipantWithRating[]>([]);
@@ -309,16 +312,17 @@ export default function RatingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   header: {
     flexDirection: 'row',
@@ -327,7 +331,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -346,7 +350,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gameInfo: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     padding: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
@@ -366,7 +370,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   userCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     flexDirection: 'row',
@@ -425,7 +429,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
     borderTopColor: colors.neutral[200],
   },
@@ -469,6 +473,7 @@ const styles = StyleSheet.create({
   ratedText: {
     fontSize: typography.sizes.sm,
     color: colors.success[500],
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
-});
+  });
+}

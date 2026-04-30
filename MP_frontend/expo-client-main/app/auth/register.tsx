@@ -14,13 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router'; // useRouter hook'unu import et
 import { ChevronLeft, Camera, User as UserIcon } from 'lucide-react-native'; // İkonları import et
 import * as ImagePicker from 'expo-image-picker'; // ImagePicker'ı import et
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { authService } from '@/services/authService';
 import { RegisterData } from '@/types';
 import { useAuth } from '@/contexts/AuthContext'; // useAuth hook'unu import et
 
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import AppBackground from '@/components/AppBackground';
 import DatePicker from '@/components/DatePicker';
 import Picker from '@/components/Picker';
 import { universities, departments } from '@/services/mockData';
@@ -41,6 +43,8 @@ interface RegisterFormState extends Partial<RegisterData> {
 }
 
 export default function RegisterScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter(); // router'ı hook ile alalım
   const { setUser } = useAuth(); // AuthContext'ten setUser fonksiyonunu al
   const [step, setStep] = useState<Step>('EMAIL_ENTRY');
@@ -278,7 +282,7 @@ export default function RegisterScreen() {
   const renderEmailVerifyStep = () => (
     <>
       <Text style={styles.subtitle}>
-        <Text style={{fontWeight: 'bold'}}>{formData.email}</Text> adresine gönderilen 6 haneli kodu girin.
+        <Text style={{ fontFamily: 'Montserrat-Bold' }}>{formData.email}</Text> adresine gönderilen 6 haneli kodu girin.
       </Text>
       <Input
         label="Doğrulama Kodu"
@@ -519,6 +523,7 @@ export default function RegisterScreen() {
   }
 
   return (
+    <AppBackground>
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -555,13 +560,15 @@ export default function RegisterScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'transparent',
   },
   keyboardView: {
     flex: 1,
@@ -578,7 +585,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -617,8 +624,8 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: typography.sizes.md,
-    color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    color: colors.secondary[400],
+    fontFamily: typography.fontFamily.semibold,
   },
   resendButton: {
     alignSelf: 'center',
@@ -627,15 +634,15 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
   },
   errorContainer: {
-    backgroundColor: '#fee',
+    backgroundColor: 'rgba(211, 47, 47, 0.18)',
     padding: spacing.md,
     borderRadius: 8,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#fcc',
+    borderColor: colors.error[600],
   },
   errorText: {
-    color: '#c00',
+    color: colors.error[500],
     fontSize: typography.sizes.sm,
     textAlign: 'center',
   },
@@ -680,10 +687,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.secondary[400],
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: colors.background.primary,
+    borderColor: colors.background.secondary,
   },
 });
+}

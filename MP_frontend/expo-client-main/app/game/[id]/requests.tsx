@@ -264,13 +264,13 @@ export default function GameRequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
   },
   header: {
     flexDirection: 'row',
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   requestCard: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     ...shadows.md,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
   },
   messageContainer: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   modalContent: {
-    backgroundColor: colors.neutral[0],
+    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.xl,
     width: '100%',
     maxHeight: '80%',
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.primary[900],
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: 'center',

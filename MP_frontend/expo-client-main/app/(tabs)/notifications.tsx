@@ -1,6 +1,17 @@
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, ActivityIndicator, Modal, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell,
   CheckCircle2,
@@ -10,16 +21,42 @@ import {
   Trash2,
   Check,
   Star,
+  ListChecks,
+  User,
+  ClipboardList,
+  ChevronRight,
 } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { notificationService, Notification } from '@/services/notificationService';
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/Button';
 import JoinRequestModal from '@/components/JoinRequestModal';
+import AppBackground from '@/components/AppBackground';
+
+function typeLabel(type: Notification['type']): string {
+  const map: Record<Notification['type'], string> = {
+    join_request_received: 'Katılım İsteği',
+    join_request_accepted: 'İsteğiniz Kabul Edildi',
+    join_request_rejected: 'İstek Reddedildi',
+    join_request_cancelled: 'İstek İptal Edildi',
+    cancellation_vote_request: 'İptal Oylaması',
+    cancellation_vote_result: 'Oylama Sonucu',
+    game_cancelled: 'Oyun İptal Edildi',
+    game_full: 'Oyun Doldu',
+    game_reminder: 'Oyun Hatırlatması',
+    player_left: 'Oyuncu Ayrıldı',
+    waitlist_joined: 'Bekleme Listesi',
+    waitlist_slot_available: 'Yer Açıldı',
+    rating_pending: 'Değerlendirme',
+  };
+  return map[type] ?? 'Bildirim';
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,7 +104,6 @@ export default function NotificationsScreen() {
     if (!user?.token) return;
 
     try {
-      // Tüm okunmamışları tek tek işaretle
       const unreadNotifications = notifications.filter((n) => !n.read);
       await Promise.all(
         unreadNotifications.map((n) => notificationService.markAsRead(n._id, user.token!))
@@ -105,123 +141,105 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
-    // Oylama bildirimi için oylama sayfasına git
     if (notification.type === 'rating_pending' && notification.data?.gameSessionId) {
       await handleMarkAsRead(notification._id);
       router.push(`/rating/${notification.data.gameSessionId}` as any);
       return;
     }
 
-    // Bekleme listesi bildirimleri için oyun detay sayfasına git
     if (notification.type === 'waitlist_slot_available' && notification.data?.gameSessionId) {
       await handleMarkAsRead(notification._id);
       router.push(`/game/${notification.data.gameSessionId}` as any);
       return;
     }
 
-    // Bekleme listesine katılım bildirimi için oyun detay sayfasına git
     if (notification.type === 'waitlist_joined' && notification.data?.gameSessionId) {
       await handleMarkAsRead(notification._id);
       router.push(`/game/${notification.data.gameSessionId}` as any);
       return;
     }
 
-    // İşlenmiş katılma istekleri için detay açma
-    const isProcessed = 
-      notification.type === 'join_request_accepted' || 
+    const isProcessed =
+      notification.type === 'join_request_accepted' ||
       notification.type === 'join_request_rejected' ||
       (notification.type === 'join_request_received' && notification.isProcessed === true);
-    
+
     if (isProcessed) {
-      return; // İşlenmiş bildirimler tıklanamaz
+      return;
     }
 
     if (!notification.read) {
       await handleMarkAsRead(notification._id);
     }
 
-    // Katılma isteği bildirimi ise modal aç
     if (notification.type === 'join_request_received' && notification.data.requestId) {
       setSelectedRequestId(notification.data.requestId);
-    }
-    // İptal oylaması bildirimi ise oylama sayfasına git
-    else if (notification.type === 'cancellation_vote_request' && notification.data.voteId) {
+    } else if (notification.type === 'cancellation_vote_request' && notification.data.voteId) {
       router.push(`/vote/${notification.data.voteId}` as any);
-    }
-    // Diğer bildirimler için oyun detayına git
-    else if (notification.data.gameSessionId) {
+    } else if (notification.data.gameSessionId) {
       router.push(`/game/${notification.data.gameSessionId}` as any);
     }
   };
 
   const handleRequestModalClose = () => {
     setSelectedRequestId(null);
-    loadNotifications(); // Bildirimleri yenile
+    loadNotifications();
   };
 
-  const getNotificationIcon = (type: string) => {
+  const leftGlyph = (type: Notification['type'], size = 26) => {
+    const glyph = colors.neutral[0];
     switch (type) {
       case 'join_request_received':
-        return <UserPlus size={20} color={colors.primary[500]} />;
+        return <UserPlus size={size} color={glyph} />;
       case 'join_request_accepted':
-        return <CheckCircle2 size={20} color={colors.success[500]} />;
+        return <CheckCircle2 size={size} color={glyph} />;
       case 'join_request_rejected':
-        return <XCircle size={20} color={colors.error[500]} />;
+        return <XCircle size={size} color={glyph} />;
       case 'join_request_cancelled':
-        return <XCircle size={20} color={colors.neutral[500]} />;
+        return <XCircle size={size} color={glyph} />;
       case 'cancellation_vote_request':
-        return <Bell size={20} color={colors.secondary[500]} />;
+        return <ClipboardList size={size} color={glyph} />;
       case 'cancellation_vote_result':
-        return <CheckCircle2 size={20} color={colors.primary[500]} />;
+        return <ClipboardList size={size} color={glyph} />;
       case 'game_cancelled':
-        return <XCircle size={20} color={colors.error[500]} />;
+        return <XCircle size={size} color={glyph} />;
       case 'game_full':
-        return <Bell size={20} color={colors.secondary[500]} />;
+        return <Bell size={size} color={glyph} />;
       case 'game_reminder':
-        return <Calendar size={20} color={colors.secondary[500]} />;
+        return <Calendar size={size} color={glyph} />;
       case 'player_left':
-        return <XCircle size={20} color={colors.secondary[500]} />;
+        return <UserPlus size={size} color={glyph} />;
       case 'waitlist_joined':
-        return <UserPlus size={20} color={colors.secondary[500]} />;
+        return <UserPlus size={size} color={glyph} />;
       case 'waitlist_slot_available':
-        return <CheckCircle2 size={20} color={colors.success[500]} />;
+        return <CheckCircle2 size={size} color={glyph} />;
       case 'rating_pending':
-        return <Star size={20} color={colors.secondary[500]} />;
+        return <Star size={size} color={glyph} />;
       default:
-        return <Bell size={20} color={colors.neutral[500]} />;
+        return <Bell size={size} color={glyph} />;
     }
   };
 
-  const getNotificationColor = (type: string) => {
-    switch (type) {
+  const rightActionIcon = (item: Notification) => {
+    const isProcessed =
+      item.type === 'join_request_accepted' ||
+      item.type === 'join_request_rejected' ||
+      (item.type === 'join_request_received' && item.isProcessed === true);
+
+    if (isProcessed) {
+      return <Check size={22} color={colors.primary[900]} />;
+    }
+
+    switch (item.type) {
       case 'join_request_received':
-        return colors.primary[100];
-      case 'join_request_accepted':
-        return colors.success[100];
-      case 'join_request_rejected':
-        return colors.error[100];
-      case 'join_request_cancelled':
-        return colors.neutral[100];
+        return <User size={22} color={colors.primary[900]} />;
       case 'cancellation_vote_request':
-        return colors.secondary[100];
-      case 'cancellation_vote_result':
-        return colors.primary[100];
-      case 'game_cancelled':
-        return colors.error[100];
-      case 'game_full':
-        return colors.secondary[100];
-      case 'game_reminder':
-        return colors.secondary[100];
-      case 'player_left':
-        return colors.secondary[100];
-      case 'waitlist_joined':
-        return colors.secondary[100];
+        return <ClipboardList size={22} color={colors.primary[900]} />;
+      case 'join_request_accepted':
       case 'waitlist_slot_available':
-        return colors.success[100];
-      case 'rating_pending':
-        return colors.secondary[100];
+        return <Check size={22} color={colors.primary[900]} />;
       default:
-        return colors.neutral[100];
+        return <ChevronRight size={22} color={colors.primary[900]} />;
     }
   };
 
@@ -231,7 +249,7 @@ export default function NotificationsScreen() {
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) return 'Az önce';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} dakika önce`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} dk önce`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} saat önce`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} gün önce`;
 
@@ -243,277 +261,284 @@ export default function NotificationsScreen() {
   };
 
   const renderNotification = ({ item }: { item: Notification }) => {
-    // İşlenmiş bildirimler: accepted/rejected bildirimleri VEYA işlenmiş join_request_received bildirimleri
-    const isProcessed = 
-      item.type === 'join_request_accepted' || 
+    const isProcessed =
+      item.type === 'join_request_accepted' ||
       item.type === 'join_request_rejected' ||
       (item.type === 'join_request_received' && item.isProcessed === true);
-    
+
     return (
       <Pressable
-        style={[
-          styles.notificationCard, 
-          !item.read && styles.unreadCard,
-          isProcessed && styles.processedCard
-        ]}
+        style={[styles.cardOuter, !item.read && styles.cardUnread]}
         onPress={() => handleNotificationPress(item)}
         disabled={isProcessed}
       >
-        <View style={[styles.iconContainer, { backgroundColor: getNotificationColor(item.type) }]}>
-          {getNotificationIcon(item.type)}
-        </View>
+        <LinearGradient
+          colors={['#252e45', '#3a2848']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={[styles.cardGradient, isProcessed && styles.cardProcessed]}
+        >
+          <View style={styles.glyphCircle}>{leftGlyph(item.type)}</View>
 
-        <View style={styles.notificationContent}>
-          <Text style={[styles.notificationTitle, !item.read && styles.unreadText]}>
-            {item.title}
-          </Text>
-          <Text style={styles.notificationMessage}>{item.message}</Text>
-          <Text style={styles.notificationTime}>{formatDate(item.createdAt)}</Text>
-        </View>
+          <View style={styles.cardCenter}>
+            <Text style={styles.cardCategory}>{typeLabel(item.type)}</Text>
+            <Text style={styles.cardMessage} numberOfLines={3}>
+              {item.message}
+            </Text>
+            <Text style={styles.cardTime}>{formatDate(item.createdAt)}</Text>
+          </View>
 
-        <View style={styles.rightSide}>
-          {isProcessed && (
-            <Check size={20} color={colors.success[500]} style={styles.processedIcon} />
-          )}
-          {!item.read && !isProcessed && <View style={styles.unreadDot} />}
-        </View>
+          <View style={styles.orangeFab}>{rightActionIcon(item)}</View>
+        </LinearGradient>
       </Pressable>
     );
   };
 
   const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Bell size={48} color={colors.neutral[400]} />
+    <View style={styles.emptyInner}>
+      <Bell size={48} color={colors.text.tertiary} />
       <Text style={styles.emptyTitle}>Bildirim Yok</Text>
       <Text style={styles.emptyText}>
-        Henüz hiç bildiriminiz yok. Oyun istekleri ve güncellemeler burada görünecek.
+        Henüz bildiriminiz yok. Oyun istekleri ve güncellemeler burada görünecek.
       </Text>
     </View>
   );
 
-  const renderHeader = () => {
-    const unreadCount = notifications.filter((n) => !n.read).length;
+  const subtitle =
+    notifications.length === 0
+      ? 'Henüz bildiriminiz yok'
+      : `${notifications.length} adet bildiriminiz var!`;
 
-    return (
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.title}>Bildirimler</Text>
-          {unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.headerActions}>
-          {unreadCount > 0 && (
-            <Pressable onPress={handleMarkAllAsRead} style={styles.headerActionButton}>
-              <Check size={16} color={colors.primary[500]} />
-              <Text style={styles.headerActionText}>Tümünü Okundu İşaretle</Text>
-            </Pressable>
-          )}
-          
-          {notifications.length > 0 && (
-            <Pressable onPress={handleDeleteAll} style={styles.headerActionButton}>
-              <Trash2 size={16} color={colors.error[500]} />
-              <Text style={[styles.headerActionText, { color: colors.error[500] }]}>Tümünü Sil</Text>
-            </Pressable>
-          )}
-        </View>
+  const listHeader = (
+    <View style={styles.screenHeader}>
+      <View style={styles.screenHeaderLeft}>
+        <Text style={styles.screenTitle}>Bildirimler</Text>
+        <Text style={styles.screenSubtitle}>{subtitle}</Text>
       </View>
-    );
-  };
+      <View style={styles.screenHeaderActions}>
+        <Pressable
+          style={styles.iconSquare}
+          onPress={handleMarkAllAsRead}
+          disabled={notifications.filter((n) => !n.read).length === 0}
+        >
+          <ListChecks size={22} color={colors.neutral[0]} />
+        </Pressable>
+        <Pressable
+          style={styles.iconSquare}
+          onPress={handleDeleteAll}
+          disabled={notifications.length === 0}
+        >
+          <Trash2 size={22} color={colors.neutral[0]} />
+        </Pressable>
+      </View>
+    </View>
+  );
 
   if (isLoading && !refreshing) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text style={styles.loadingText}>Bildirimler yükleniyor...</Text>
-      </View>
+      <AppBackground>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.secondary[400]} />
+          <Text style={styles.loadingText}>Bildirimler yükleniyor...</Text>
+        </View>
+      </AppBackground>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={notifications}
-        renderItem={renderNotification}
-        keyExtractor={(item) => item._id}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={notifications.length === 0 ? styles.emptyListContent : styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary[500]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      />
+    <AppBackground>
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <View style={styles.page}>
+          {listHeader}
 
-      {/* Katılma İsteği Modal */}
-      {selectedRequestId && (
-        <JoinRequestModal
-          visible={true}
-          requestId={selectedRequestId}
-          onClose={handleRequestModalClose}
-        />
-      )}
-    </View>
+          <View style={styles.listShell}>
+            <FlatList
+              data={notifications}
+              renderItem={renderNotification}
+              keyExtractor={(item) => item._id}
+              ListEmptyComponent={renderEmpty}
+              contentContainerStyle={
+                notifications.length === 0 ? styles.emptyListContent : styles.listContent
+              }
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.secondary[400]}
+                />
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+
+        {selectedRequestId && (
+          <JoinRequestModal
+            visible={true}
+            requestId={selectedRequestId}
+            onClose={handleRequestModalClose}
+          />
+        )}
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.neutral[50],
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[50],
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-  },
-  listContent: {
-    paddingBottom: spacing.xl,
-  },
-  emptyListContent: {
-    flexGrow: 1,
-  },
-  header: {
-    backgroundColor: colors.neutral[0],
-    padding: spacing.md,
-    paddingTop: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  title: {
-    fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    marginRight: spacing.sm,
-  },
-  unreadBadge: {
-    backgroundColor: colors.error[500],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    minWidth: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadBadgeText: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    color: colors.neutral[0],
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flexWrap: 'wrap',
-  },
-  headerActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  headerActionText: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.primary[500],
-  },
-  notificationCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.neutral[0],
-    padding: spacing.md,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.md,
-    borderRadius: borderRadius.md,
-    ...shadows.sm,
-  },
-  unreadCard: {
-    backgroundColor: colors.primary[50],
-  },
-  processedCard: {
-    opacity: 0.7,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  rightSide: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: spacing.xs,
-    position: 'relative',
-  },
-  processedIcon: {
-    marginRight: spacing.xs,
-  },
-  notificationTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text.primary,
-    marginBottom: 4,
-  },
-  unreadText: {
-    color: colors.primary[700],
-  },
-  notificationMessage: {
-    fontSize: typography.sizes.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
-    lineHeight: typography.sizes.sm * typography.lineHeights.normal,
-  },
-  notificationTime: {
-    fontSize: typography.sizes.xs,
-    color: colors.text.tertiary,
-  },
-  deleteButton: {
-    padding: spacing.xs,
-    marginLeft: spacing.xs,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary[500],
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    page: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.sizes.md,
+      color: colors.text.secondary,
+      fontFamily: typography.fontFamily.regular,
+    },
+    screenHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+    },
+    screenHeaderLeft: {
+      flex: 1,
+      paddingRight: spacing.md,
+    },
+    screenTitle: {
+      fontSize: typography.sizes.xxxl,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+    },
+    screenSubtitle: {
+      marginTop: spacing.xs,
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+    },
+    screenHeaderActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    iconSquare: {
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.md,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.12)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    listShell: {
+      flex: 1,
+      borderTopWidth: 2,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: `${colors.secondary[400]}cc`,
+      borderTopLeftRadius: borderRadius.xxl,
+      borderTopRightRadius: borderRadius.xxl,
+      overflow: 'hidden',
+      paddingTop: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    listContent: {
+      paddingBottom: spacing.xxl,
+    },
+    emptyListContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      paddingVertical: spacing.xxl,
+    },
+    cardOuter: {
+      borderRadius: borderRadius.xl,
+      overflow: 'hidden',
+      marginBottom: spacing.sm,
+      ...shadows.md,
+    },
+    cardUnread: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.secondary[400],
+    },
+    cardGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.sm,
+      gap: spacing.sm,
+    },
+    cardProcessed: {
+      opacity: 0.72,
+    },
+    glyphCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cardCenter: {
+      flex: 1,
+      minWidth: 0,
+    },
+    cardCategory: {
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+      marginBottom: 4,
+    },
+    cardMessage: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+      lineHeight: typography.sizes.sm * typography.lineHeights.normal,
+    },
+    cardTime: {
+      marginTop: spacing.xs,
+      fontSize: typography.sizes.xs,
+      color: colors.text.tertiary,
+      fontFamily: typography.fontFamily.regular,
+    },
+    orangeFab: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.secondary[400],
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexShrink: 0,
+      ...shadows.sm,
+    },
+    emptyInner: {
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+    },
+    emptyTitle: {
+      fontSize: typography.sizes.xl,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    emptyText: {
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+      textAlign: 'center',
+      lineHeight: typography.sizes.md * typography.lineHeights.relaxed,
+    },
+  });
+}

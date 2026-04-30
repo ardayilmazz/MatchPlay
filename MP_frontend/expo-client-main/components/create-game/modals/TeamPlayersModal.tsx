@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Button from '@/components/Button';
 
@@ -24,6 +25,8 @@ export default function TeamPlayersModal({
   onClose,
   onSave,
 }: TeamPlayersModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [totalPlayers, setTotalPlayers] = useState(initialTotalPlayers || MIN_PLAYERS);
   const [neededPlayers, setNeededPlayers] = useState(initialNeededPlayers || 1);
   const [autoCancelIfNotFull, setAutoCancelIfNotFull] = useState(initialAutoCancelIfNotFull);
@@ -154,7 +157,8 @@ export default function TeamPlayersModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   content: {
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   counterControl: {
@@ -215,7 +219,7 @@ const styles = StyleSheet.create({
   },
   counterValue: {
     fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.primary[500],
   },
   hint: {
@@ -241,7 +245,7 @@ const styles = StyleSheet.create({
   },
   autoCancelTitle: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -252,4 +256,5 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: spacing.md,
   },
-});
+  });
+}

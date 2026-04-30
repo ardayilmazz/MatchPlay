@@ -1,5 +1,6 @@
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { X } from 'lucide-react-native';
 import { GameType } from '@/services/gameService';
 import {
@@ -53,7 +54,9 @@ export default function GameSelectionModal({
   onCategorySelect,
   onGameSelect,
 }: GameSelectionModalProps) {
-  
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   const filteredGames = selectedCategory
     ? gameTypes.filter((game) => game.category === selectedCategory)
     : [];
@@ -152,7 +155,8 @@ export default function GameSelectionModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -173,7 +177,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
   },
   loadingContainer: {
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     flex: 1,
   },
@@ -219,7 +223,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: typography.sizes.md,
     color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
   gameGrid: {
     flexDirection: 'row',
@@ -249,12 +253,13 @@ const styles = StyleSheet.create({
   },
   gameName: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
     textAlign: 'center',
   },
   gameNameSelected: {
     color: colors.primary[500],
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
   },
-});
+  });
+}

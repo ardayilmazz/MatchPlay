@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { spacing, typography, borderRadius } from '@/constants/theme';
 import { GameType } from '@/services/gameService';
 import { ChevronRight, Check } from 'lucide-react-native';
 import Button from '@/components/Button';
@@ -58,6 +59,8 @@ export default function Step1GameStep({
   onTitleDescriptionUpdate,
   onNext,
 }: Step1GameStepProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [showGameModal, setShowGameModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showLocationTimeMenu, setShowLocationTimeMenu] = useState(false);
@@ -242,13 +245,14 @@ export default function Step1GameStep({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
   title: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.fontFamily.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -293,12 +297,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.fontFamily.semibold,
     color: colors.text.primary,
   },
   subSectionTitle: {
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
     color: colors.text.primary,
   },
   selectedInfo: {
@@ -309,14 +313,15 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: typography.sizes.sm,
     color: colors.success[500],
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   selectedSubText: {
     fontSize: typography.sizes.xs,
     color: colors.success[500],
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.fontFamily.medium,
   },
   button: {
     marginTop: spacing.lg,
   },
-});
+  });
+}

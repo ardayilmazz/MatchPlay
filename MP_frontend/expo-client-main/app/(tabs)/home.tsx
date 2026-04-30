@@ -1,77 +1,196 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
-import { useState, useEffect } from 'react';
-import { router, usePathname } from 'expo-router';
-import { Trophy, Calendar, MapPin, TrendingUp, AlertCircle } from 'lucide-react-native';
-import { colors, spacing, typography, borderRadius } from '@/constants/theme';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+  ImageBackground,
+  Image,
+  Pressable,
+  Dimensions,
+} from 'react-native';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { usePathname, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { UserPlus, AlertCircle } from 'lucide-react-native';
+import { darkColors, spacing, typography, borderRadius, shadows } from '@/constants/theme';
 import { gameService } from '@/services/gameService';
-import { statisticsService, GameStatistics } from '@/services/statisticsService';
-// import { useLocation } from '@/hooks/useLocation'; // Konum hook'unu devre dışı bırak
+import { statisticsService } from '@/services/statisticsService';
 import { Game } from '@/types';
-import StatisticsCard from '@/components/home/StatisticsCard';
-import InstantGamesSection from '@/components/home/InstantGamesSection';
-import QuickFilters, { QuickFilterType } from '@/components/home/QuickFilters';
-import GameCard from '@/components/GameCard';
-import Button from '@/components/Button';
-
-import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { homeCacheService } from '@/utils/homeCache';
+import { resolveSportImage } from '@/utils/sportImages';
+
+const BG = require('@/assets/images/app background.png');
+
+type Palette = typeof darkColors;
+
+const rowStyles = StyleSheet.create({
+  rowWrap: {
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  rowGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingRight: spacing.md,
+    paddingLeft: 0,
+    borderRadius: borderRadius.lg,
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+    paddingLeft: spacing.md,
+  },
+  leftIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  sportImage: {
+    width: 40,
+    height: 40,
+  },
+  mid: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    fontSize: typography.sizes.md,
+    fontFamily: typography.fontFamily.semibold,
+    marginBottom: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  meta: {
+    fontSize: typography.sizes.xs,
+    fontFamily: typography.fontFamily.regular,
+  },
+  joinBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: spacing.sm,
+  },
+});
+
+function FeaturedRow({
+  game,
+  colors,
+  onOpen,
+  onJoin,
+}: {
+  game: Game;
+  colors: Palette;
+  onOpen: (g: Game) => void;
+  onJoin: (g: Game) => void;
+}) {
+  const source = useMemo(() => resolveSportImage(game.sportName), [game.sportName]);
+  const line = useMemo(
+    () => `${game.districtName} · ${game.venueName}`.replace(/\s·\s$/, '').trim(),
+    [game.districtName, game.venueName]
+  );
+  return (
+    <View style={rowStyles.rowWrap}>
+      <LinearGradient
+        colors={['#2A3348', colors.background.secondary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={rowStyles.rowGradient}
+      >
+        <Pressable
+          onPress={() => onOpen(game)}
+          style={({ pressed }) => [rowStyles.rowMain, { opacity: pressed ? 0.92 : 1 }]}
+        >
+          <View style={rowStyles.leftIcon}>
+            <Image source={source} style={rowStyles.sportImage} resizeMode="contain" />
+          </View>
+          <View style={rowStyles.mid}>
+            <Text style={[rowStyles.title, { color: colors.text.primary }]} numberOfLines={1}>
+              {game.title ? game.title : game.sportName}
+            </Text>
+            <View style={rowStyles.metaRow}>
+              <Text style={[rowStyles.meta, { color: colors.text.tertiary }]} numberOfLines={1}>
+                {game.currentPlayers}/{game.totalPlayers}
+              </Text>
+              <Text
+                style={[rowStyles.meta, { color: colors.text.tertiary, flex: 1, marginLeft: spacing.sm }]}
+                numberOfLines={1}
+              >
+                {line}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+        <Pressable
+          onPress={() => onJoin(game)}
+          style={({ pressed }) => [
+            rowStyles.joinBtn,
+            { backgroundColor: colors.secondary[400] },
+            pressed && { opacity: 0.85 },
+          ]}
+          hitSlop={8}
+        >
+          <UserPlus size={20} color={colors.neutral[0]} />
+        </Pressable>
+      </LinearGradient>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
-  const [statistics, setStatistics] = useState<GameStatistics | null>(null);
-  const [instantGames, setInstantGames] = useState<Game[]>([]);
-  const [filteredGames, setFilteredGames] = useState<Game[]>([]);
-  const [activeFilter, setActiveFilter] = useState<QuickFilterType | null>(null);
+  const [todayGames, setTodayGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { user, isAuthenticated } = useAuth();
   const pathname = usePathname();
-  const { theme } = useTheme();
-  const styles = createStyles(theme);
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const palette = darkColors;
+  const styles = useMemo(() => createStyles(palette, insets.top, insets.bottom), [insets.top, insets.bottom]);
 
-  // --- KONUM ÖZELLİĞİ GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
-  const location = null;
-  const locationError = null;
-  const hasPermission = true; // Banner'ı gizlemek için true varsayalım
-  // const { location, error: locationError, hasPermission, requestPermission, isLoading: isLocationLoading } = useLocation();
-  // ---------------------------------------------------------
+  const twoColWidth = (Dimensions.get('window').width - spacing.lg * 2 - spacing.sm) / 2;
 
   const loadData = async (forceRefresh: boolean = false) => {
     try {
       setError(null);
 
-      // Önce cache'i kontrol et (forceRefresh değilse)
       if (!forceRefresh) {
         const cachedData = await homeCacheService.loadCache();
         if (cachedData) {
-          console.log('[Home] Using cached data');
-          setStatistics(cachedData.statistics);
-          setInstantGames(cachedData.instantGames);
-          setFilteredGames(cachedData.todayGames);
+          setTodayGames(cachedData.todayGames ?? []);
           setIsLoading(false);
           setRefreshing(false);
           return;
         }
       }
 
-      // Cache yoksa veya force refresh ise API'den çek
-      console.log('[Home] Fetching fresh data from API');
       setIsLoading(true);
-
-      // Anlık oyunlar için (2 saat içinde başlayanlar)
       const now = new Date();
       const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      
-      // Bugünkü oyunlar için
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(23, 59, 59, 999);
 
-      const [stats, instant, todayGames] = await Promise.all([
+      const [stats, instant, todayG] = await Promise.all([
         statisticsService.getHomeStatistics(),
         gameService.getGames({
           startDateFrom: now,
@@ -85,18 +204,13 @@ export default function HomeScreen() {
         }),
       ]);
 
-      setStatistics(stats);
-      setInstantGames(instant);
-      setFilteredGames(todayGames);
+      setTodayGames(todayG);
 
-      // Cache'e kaydet
       await homeCacheService.saveCache({
         statistics: stats,
         instantGames: instant,
-        todayGames: todayGames,
+        todayGames: todayG,
       });
-
-      console.log('[Home] Data cached successfully');
     } catch (err) {
       setError('Veriler yüklenirken bir hata oluştu');
       console.error('Error loading home data:', err);
@@ -106,434 +220,245 @@ export default function HomeScreen() {
     }
   };
 
-  const getFilteredGames = async (filter: QuickFilterType): Promise<Game[]> => {
-    const now = new Date();
-    
-    switch (filter) {
-      case 'today': {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(23, 59, 59, 999);
-        
-        return gameService.getGames({
-          startDateFrom: today,
-          startDateTo: tomorrow,
-          availableOnly: true,
-        });
-      }
-      case 'tomorrow': {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        const dayAfter = new Date(tomorrow);
-        dayAfter.setDate(dayAfter.getDate() + 1);
-        dayAfter.setHours(23, 59, 59, 999);
-        
-        return gameService.getGames({
-          startDateFrom: tomorrow,
-          startDateTo: dayAfter,
-          availableOnly: true,
-        });
-      }
-      case 'week': {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(today);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-        weekEnd.setHours(23, 59, 59, 999);
-        
-        return gameService.getGames({
-          startDateFrom: today,
-          startDateTo: weekEnd,
-          availableOnly: true,
-        });
-      }
-      case 'nearby':
-        // Bu özellik geçici olarak devre dışı (konum için lat/lng gerekli)
-        return Promise.resolve([]);
-      case 'instant': {
-        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        return gameService.getGames({
-          startDateFrom: now,
-          startDateTo: twoHoursLater,
-          availableOnly: true,
-        });
-      }
-      default:
-        return [];
-    }
-  };
-
   useEffect(() => {
-    // Bu bileşen arka planda yüklense bile, sadece kullanıcı giriş yapmışsa
-    // VE şu anki yol (path) '/home' ise, yani bu ekran aktif olarak
-    // görünüyorsa verileri yükle. Bu, başlangıçtaki gereksiz yüklemeyi önler.
     if (isAuthenticated && pathname === '/home') {
       loadData();
     }
-  }, [user, isAuthenticated, pathname]);
+  }, [user?.id, isAuthenticated, pathname]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    loadData(true); // Force refresh - cache'i atla
-  };
+    loadData(true);
+  }, []);
 
-  const handleFilterPress = async (filter: QuickFilterType) => {
-    try {
-      if (activeFilter === filter) {
-        setActiveFilter(null);
-        // Cache'den bugünkü oyunları yükle, yoksa API'den çek
-        const cachedData = await homeCacheService.loadCache();
-        if (cachedData && cachedData.todayGames.length > 0) {
-          setFilteredGames(cachedData.todayGames);
-        } else {
-          const defaultGames = await gameService.getGames({
-            dateRange: 'today',
-            maxDistance: 2,
-          });
-          setFilteredGames(defaultGames);
-        }
-      } else {
-        setActiveFilter(filter);
-        // Anlık oyunlar için cache kullan
-        if (filter === 'instant') {
-          const cachedData = await homeCacheService.loadCache();
-          if (cachedData && cachedData.instantGames.length > 0) {
-            setFilteredGames(cachedData.instantGames);
-            return;
-          }
-        }
-        const filtered = await getFilteredGames(filter);
-        setFilteredGames(filtered);
-      }
-    } catch (error) {
-      console.error('Error handling filter press:', error);
-    }
-  };
+  const onOpenGame = useCallback(
+    (game: Game) => {
+      router.push(`/game/${game.id}` as any);
+    },
+    [router]
+  );
 
-  // handleRequestLocation fonksiyonunu devre dışı bırakabilir veya silebiliriz.
-  // const handleRequestLocation = async () => { ... };
-
-  const handleGamePress = (game: Game) => {
-    router.push(`/game/${game.id}` as any);
-  };
-
-  const getFilterTitle = () => {
-    if (!activeFilter) return 'Bugünkü Oyunlar';
-    switch (activeFilter) {
-      case 'today': return 'Bugünkü Oyunlar';
-      case 'tomorrow': return 'Yarınki Oyunlar';
-      case 'week': return 'Bu Haftaki Oyunlar';
-      case 'nearby': return 'Yakınımdaki Oyunlar';
-      case 'instant': return 'Anlık Oyunlar';
-      default: return 'Oyunlar';
-    }
-  };
+  const onJoinGame = useCallback(
+    (game: Game) => {
+      router.push(`/game/${game.id}` as any);
+    },
+    [router]
+  );
 
   if (isLoading && !refreshing) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text style={styles.loadingText}>Yükleniyor...</Text>
-      </View>
+      <ImageBackground source={BG} style={styles.bg} resizeMode="cover">
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={palette.secondary[400]} />
+          <Text style={styles.loadingText}>Yükleniyor...</Text>
+        </View>
+      </ImageBackground>
     );
   }
 
+  const featured = todayGames.slice(0, 10);
+
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={colors.primary[500]}
-        />
-      }
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>Ana Sayfa</Text>
-        <Text style={styles.subtitle}>MatchPlay'e hoş geldiniz!</Text>
-      </View>
-
-      {/* --- KONUM BANNER'LARI GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI ---
-      {!hasPermission && !locationError && (
-        <View style={styles.locationBanner}>
-          <MapPin size={20} color={colors.primary[500]} />
-          <Text style={styles.locationBannerText}>
-            Yakınızdaki oyunları görmek için konum izni verin
+    <ImageBackground source={BG} style={styles.bg} resizeMode="cover">
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={palette.primary[200]}
+            progressViewOffset={insets.top}
+          />
+        }
+      >
+        <View style={[styles.topPad, { paddingTop: insets.top + spacing.md }]}>
+          <Text style={styles.headline}>
+            Hemen bir odaya katıl ve{'\n'}sosyalleşmeye başla!
           </Text>
-          <Pressable onPress={handleRequestLocation}>
-            <Text style={styles.locationBannerButton}>İzin Ver</Text>
+        </View>
+
+        <View style={styles.ctaRow}>
+          <Pressable
+            onPress={() => router.push('/(tabs)/discover')}
+            style={({ pressed }) => [styles.ctaCell, { width: twoColWidth }, { opacity: pressed ? 0.9 : 1 }]}
+          >
+            <LinearGradient
+              colors={['#3D5A8C', palette.primary[800]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.ctaInner}
+            >
+              <Text style={styles.ctaText}>Buluşma Keşfet</Text>
+            </LinearGradient>
           </Pressable>
-        </View>
-      )}
-
-      {locationError && hasPermission && (
-        <View style={styles.errorBanner}>
-          <AlertCircle size={20} color={colors.error[500]} />
-          <Text style={styles.errorBannerText}>{locationError}</Text>
-        </View>
-      )}
-      --------------------------------------------------------- */}
-
-      {error && (
-        <View style={styles.errorBanner}>
-          <AlertCircle size={20} color={colors.error[500]} />
-          <Text style={styles.errorBannerText}>{error}</Text>
-        </View>
-      )}
-
-      {statistics && (
-        <View style={styles.statisticsContainer}>
-          <View style={styles.statisticsRow}>
-            <StatisticsCard
-              title="Aktif Oyun"
-              value={statistics.totalActiveGames}
-              icon={Trophy}
-              color={colors.primary[500]}
-            />
-            <StatisticsCard
-              title="Bugün"
-              value={statistics.todayGames}
-              icon={Calendar}
-              color={colors.secondary[500]}
-            />
-          </View>
-          <View style={styles.statisticsRow}>
-            <StatisticsCard
-              title="Yakınımda"
-              value={location ? statistics.nearbyGames : '-'}
-              icon={MapPin}
-              color={colors.success[500]}
-            />
-            <StatisticsCard
-              title="Popüler"
-              value={statistics.popularSports[0]?.sportName || '-'}
-              icon={TrendingUp}
-              color={colors.error[500]}
-            />
-          </View>
-        </View>
-      )}
-
-      {statistics?.popularSports && statistics.popularSports.length > 0 && (
-        <View style={styles.popularSportsContainer}>
-          <Text style={styles.sectionTitle}>Popüler Sporlar</Text>
-          <View style={styles.popularSportsList}>
-            {statistics.popularSports.map((sport, index) => (
-              <View key={index} style={styles.popularSportItem}>
-                <Text style={styles.popularSportName}>{sport.sportName}</Text>
-                <View style={styles.popularSportBadge}>
-                  <Text style={styles.popularSportCount}>{sport.count} oyun</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      <InstantGamesSection games={instantGames} isLoading={false} />
-
-      <QuickFilters
-        activeFilter={activeFilter}
-        onFilterPress={handleFilterPress}
-        nearbyCount={0} // Yakınımda sayısını 0 olarak ayarlıyoruz
-        instantCount={instantGames.length}
-      />
-
-      <View style={styles.gamesSection}>
-        <View style={styles.gamesSectionHeader}>
-          <Text style={styles.sectionTitle}>{getFilterTitle()}</Text>
-          <Pressable onPress={() => router.push('/(tabs)/discover')}>
-            <Text style={styles.viewAllText}>Tümünü Gör</Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/create')}
+            style={({ pressed }) => [styles.ctaCell, { width: twoColWidth }, { opacity: pressed ? 0.9 : 1 }]}
+          >
+            <LinearGradient
+              colors={['#8B4D6B', '#1A2550', palette.background.primary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.ctaInner}
+            >
+              <Text style={styles.ctaText}>Buluşma Oluştur</Text>
+            </LinearGradient>
           </Pressable>
         </View>
 
-        {filteredGames.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Oyun bulunamadı</Text>
-            <Text style={styles.emptyText}>
-              Seçtiğiniz filtreye uygun oyun yok. Yeni oyun oluşturabilir veya filtreleri değiştirebilirsiniz.
-            </Text>
-            <Button
-              title="Yeni Oyun Oluştur"
-              onPress={() => router.push('/(tabs)/create')}
-              style={styles.createButton}
-            />
-          </View>
-        ) : (
-          <View style={styles.gamesList}>
-            {filteredGames.slice(0, 5).map((game) => (
-              <GameCard key={game.id} game={game} onPress={handleGamePress} />
-            ))}
-            {filteredGames.length > 5 && (
-              <Button
-                title={`${filteredGames.length - 5} Oyun Daha Göster`}
-                onPress={() => router.push('/(tabs)/discover')}
-                variant="outline"
-                style={styles.showMoreButton}
-              />
-            )}
+        {error && (
+          <View style={styles.errorBanner}>
+            <AlertCircle size={20} color={palette.error[400]} />
+            <Text style={styles.errorBannerText}>{error}</Text>
           </View>
         )}
-      </View>
-    </ScrollView>
+
+        <View style={[styles.sheet, shadows.md]}>
+          <View style={styles.sheetHead}>
+            <View style={styles.sheetBadge}>
+              <Text style={styles.sheetTitle}>Öne Çıkanlar</Text>
+              <Text style={styles.sheetSubtitle}>2 km çevrede</Text>
+            </View>
+          </View>
+
+          {featured.length === 0 ? (
+            <Text style={styles.emptyText}>
+              Bugün listelenebilecek oyun bulunamadı. Yeni bir buluşma oluşturun veya keşfet sayfasını deneyin.
+            </Text>
+          ) : (
+            featured.map((game) => (
+              <FeaturedRow
+                key={game.id}
+                game={game}
+                colors={palette}
+                onOpen={onOpenGame}
+                onJoin={onJoinGame}
+              />
+            ))
+          )}
+        </View>
+        <View style={{ height: spacing.lg }} />
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.secondary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background.secondary,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-  },
-  header: {
-    padding: spacing.md,
-    paddingTop: spacing.lg,
-    backgroundColor: colors.neutral[0],
-  },
-  title: {
-    fontSize: typography.sizes.xxxl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-  },
-  locationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: colors.primary[50],
-    borderRadius: borderRadius.md,
-    margin: spacing.md,
-  },
-  locationBannerText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.text.secondary,
-  },
-  locationBannerButton: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary[500],
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: colors.error[50],
-    borderRadius: borderRadius.md,
-    margin: spacing.md,
-  },
-  errorBannerText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.error[700],
-  },
-  statisticsContainer: {
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  statisticsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  popularSportsContainer: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  popularSportsList: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  popularSportItem: {
-    flex: 1,
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  popularSportName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  popularSportBadge: {
-    backgroundColor: colors.primary[50],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.sm,
-  },
-  popularSportCount: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.medium,
-    color: colors.primary[500],
-  },
-  gamesSection: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  gamesSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  viewAllText: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary[500],
-  },
-  gamesList: {
-    gap: 0,
-  },
-  emptyContainer: {
-    backgroundColor: colors.neutral[0],
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    fontSize: typography.sizes.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  createButton: {
-    minWidth: 200,
-  },
-  showMoreButton: {
-    marginTop: spacing.md,
-  },
-});
+function createStyles(colors: Palette, _topInset: number, bottomInset: number) {
+  return StyleSheet.create({
+    bg: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: bottomInset + 90,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.sizes.md,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+    },
+    topPad: {
+      paddingHorizontal: spacing.lg,
+    },
+    headline: {
+      fontSize: typography.sizes.xxxl,
+      lineHeight: typography.sizes.xxxl * typography.lineHeights.tight,
+      fontFamily: typography.fontFamily.semibold,
+      color: colors.text.primary,
+      textAlign: 'center',
+    },
+    ctaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      marginTop: spacing.lg,
+      marginBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    ctaCell: {
+      minHeight: 112,
+      borderRadius: borderRadius.xxl,
+      overflow: 'hidden',
+    },
+    ctaInner: {
+      flex: 1,
+      minHeight: 112,
+      borderRadius: borderRadius.xxl,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.md,
+    },
+    ctaText: {
+      fontSize: typography.sizes.lg,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.neutral[0],
+      textAlign: 'center',
+    },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      padding: spacing.md,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      backgroundColor: 'rgba(0,0,0,0.25)',
+      borderRadius: borderRadius.lg,
+    },
+    errorBannerText: {
+      flex: 1,
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.error[200],
+    },
+    sheet: {
+      alignSelf: 'stretch',
+      marginHorizontal: spacing.lg,
+      backgroundColor: colors.background.secondary,
+      borderTopWidth: 2,
+      borderTopColor: colors.secondary[400],
+      borderTopLeftRadius: borderRadius.xxl,
+      borderTopRightRadius: borderRadius.xxl,
+      borderBottomLeftRadius: borderRadius.lg,
+      borderBottomRightRadius: borderRadius.lg,
+      padding: spacing.lg,
+    },
+    sheetHead: {
+      marginBottom: spacing.md,
+    },
+    sheetBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.primary[500],
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      borderRadius: borderRadius.md,
+    },
+    sheetTitle: {
+      fontSize: typography.sizes.lg,
+      fontFamily: typography.fontFamily.bold,
+      color: colors.text.primary,
+    },
+    sheetSubtitle: {
+      fontSize: typography.sizes.xs,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.secondary,
+      marginTop: 2,
+    },
+    emptyText: {
+      fontSize: typography.sizes.sm,
+      fontFamily: typography.fontFamily.regular,
+      color: colors.text.tertiary,
+      textAlign: 'center',
+      lineHeight: typography.sizes.sm * typography.lineHeights.normal,
+    },
+  });
+}
