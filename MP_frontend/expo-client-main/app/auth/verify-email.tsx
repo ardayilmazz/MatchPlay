@@ -20,24 +20,31 @@ export default function VerifyEmailScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleVerify = async () => {
+    if (!email) {
+      setError('E-posta bilgisi bulunamadı. Lütfen kayıt ekranından tekrar deneyin.');
+      return;
+    }
     if (!code) {
       setError('Doğrulama kodu gereklidir');
       return;
     }
 
     setLoading(true);
-    const result = await authService.verifyEmail(email, code);
-    setLoading(false);
+    try {
+      const result = await authService.verifyCode(email, code);
 
-    if (!result.success) {
-      setError(result.message || 'Doğrulama başarısız');
-    } else {
-      Alert.alert('Başarılı', 'E-posta doğrulandı!', [
-        {
-          text: 'Tamam',
-          onPress: () => router.push('/auth/login'),
-        },
-      ]);
+      if (!result.success) {
+        setError(result.message || 'Doğrulama başarısız');
+      } else {
+        Alert.alert('Başarılı', 'E-posta doğrulandı!', [
+          {
+            text: 'Tamam',
+            onPress: () => router.push('/auth/login'),
+          },
+        ]);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

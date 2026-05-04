@@ -397,12 +397,6 @@ export default function RegisterScreen() {
 
     return (
       <>
-        <Text style={styles.subtitle}>
-          Üniversite bilgilerini gir. {'\n'}
-          <Text style={styles.infoText}>
-            (Kayıt olurken üniversite seçimi zorunludur. Çünkü uygulamamız sadece belli okullar girdiğiniz zaman kullanabilecek. O yüzden ilk önce okul sorsun.)
-          </Text>
-        </Text>
         <Picker
           label="Üniversite"
           placeholder="Üniversitenizi seçin"
